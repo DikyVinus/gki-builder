@@ -197,7 +197,7 @@ fi
 if ksu_manual_hook; then
   log "Applying manual hook patch"
   if [[ "$KSU" == "Suki" ]]; then
-    patch -p1 --forward --fuzz=3 < $WORKDIR/kernel-patches/manual-hook-v1.5.patch
+    patch -p1 --forward < $WORKDIR/kernel-patches/manual-hook-v1.6.patch
   else
     patch -p1 --forward < $WORKDIR/kernel-patches/manual-hook-v1.4.patch
   fi
