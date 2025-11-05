@@ -8,10 +8,16 @@ USER="eraselk"
 HOST="gacorprjkt"
 TIMEZONE="Asia/Makassar"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-ANYKERNEL_BRANCH="android15-6.6"
-KERNEL_REPO="https://github.com/linastorvaldz/kernel_common"
-KERNEL_BRANCH="android15-6.6-2025-01"
 KERNEL_DEFCONFIG="quartix_defconfig"
+if [ "$KVER" == "6.6" ]; then
+  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
+  ANYKERNEL_BRANCH="android15-6.6"
+  KERNEL_BRANCH="android15-6.6-2025-01"
+elif [ "$KVER" == "6.1" ]; then
+  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android14-6.1"
+  ANYKERNEL_BRANCH="android14-6.1"
+  KERNEL_BRANCH="android14-6.1-lts"
+fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/linastorvaldz/quartix-releases"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
@@ -98,12 +104,17 @@ git clone --depth=1 -q \
 log "Cloning Kbuild tools..."
 KBUILD_TOOLS_DIR="$WORKDIR/kbuild-tools"
 KBUILD_TOOLS_BIN="${KBUILD_TOOLS_DIR}/linux-x86/bin"
+if [ "$KVER" == "6.6" ]; then
+  KBUILD_TOOLS_BRANCH=main-kernel-build-2024
+elif [ "$KVER" == "6.1" ]; then
+  KBUILD_TOOLS_BRANCH=main-kernel-build-2023
+fi
 git clone --depth=1 -q \
   https://android.googlesource.com/kernel/prebuilts/build-tools \
-  -b main-kernel-build-2024 \
+  -b $KBUILD_TOOLS_BRANCH \
   $KBUILD_TOOLS_DIR
 
-export PATH="${CLANG_BIN}:${GCC_BIN}:${RUST_BIN}:${KBUILD_TOOLS_BIN}:$PATH"
+export PATH="${CLANG_BIN}:${GCC_BIN}:${KBUILD_TOOLS_BIN}:$PATH"
 
 # Extract clang version
 COMPILER_STRING=$(clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')
@@ -141,7 +152,11 @@ if susfs_included; then
   log "Applying kernel-side susfs patches"
   SUSFS_DIR="$WORKDIR/susfs"
   SUSFS_PATCHES="${SUSFS_DIR}/kernel_patches"
-  SUSFS_BRANCH=gki-android15-6.6
+  if [ "$KVER" == "6.6" ]; then
+    SUSFS_BRANCH=gki-android15-6.6
+  elif [ "$KVER" == "6.1" ]; then
+    SUSFS_BRANCH=gki-android14-6.1
+  fi
   git clone --depth=1 -q https://gitlab.com/simonpunk/susfs4ksu -b $SUSFS_BRANCH $SUSFS_DIR
   cp -R $SUSFS_PATCHES/fs/* ./fs
   cp -R $SUSFS_PATCHES/include/* ./include

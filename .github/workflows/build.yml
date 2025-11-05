@@ -50,6 +50,14 @@ on:
           - "true"
           - "false"
 
+      KERNEL_VERSION:
+        description: Which kernel version do you want to build?
+        default: ""
+        type: choice
+        options:
+          - "6.6"
+          - "6.1"
+
 env:
   MAN_DISABLE: true
   DEBIAN_FRONTEND: noninteractive
@@ -139,6 +147,7 @@ jobs:
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
           LAST_BUILD: ${{ inputs.LAST_BUILD }}
           TODO: ${{ inputs.TODO }}
+          KVER: ${{ inputs.KERNEL_VERSION }}
         run: |
           export GIT_CLONE_PROTECTION_ACTIVE=false
           chmod +x *.sh
