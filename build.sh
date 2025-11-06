@@ -166,6 +166,8 @@ if susfs_included; then
     patch -p1 < $WORKDIR/kernel-patches/task_mmu.c_fix.patch
   elif [ $LINUX_VERSION_CODE -eq 6658 ]; then
     patch -p1 < $WORKDIR/kernel-patches/task_mmu.c_fix-k6.6.58.patch
+  elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
+    patch -p1 < $WORKDIR/kernel-patches/fs_proc_base.c-fix-k6.1.patch
   fi
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
