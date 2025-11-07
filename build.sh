@@ -256,7 +256,7 @@ MAKE_ARGS=(
   O=$OUTDIR
 )
 KERNEL_IMAGE="$OUTDIR/arch/arm64/boot/Image"
-export KCFLAGS="-w -mcpu=cortex-a55 -mtune=cortex-a76"
+export KCFLAGS="-w"
 
 text=$(
   cat << EOF
