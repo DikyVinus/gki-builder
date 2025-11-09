@@ -229,9 +229,9 @@ if [ "$KSU" == "Magic" ] && susfs_included; then
 fi
 
 # Enable KPM Supports for SukiSU
-# if [[ $KSU == "Suki" ]]; then
-#   config --enable CONFIG_KPM
-# fi
+if [[ $KSU == "Suki" ]]; then
+  config --enable CONFIG_KPM
+fi
 
 # set localversion
 if [[ $TODO == "kernel" ]]; then
@@ -302,22 +302,22 @@ make ${MAKE_ARGS[@]} Image
 cd $WORKDIR
 
 # Patch the kernel Image for KPM Supports
-#if [[ $KSU == "Suki" ]]; then
-#  tempdir=$(mktemp -d) && cd $tempdir
-#
-#  # Setup patching tool
-#  LATEST_SUKISU_PATCH=$(curl -s "https://api.github.com/repos/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/latest" | grep "browser_download_url" | grep "patch_linux" | cut -d '"' -f 4)
-#  curl -Ls "$LATEST_SUKISU_PATCH" -o patch_linux
-#  chmod a+x ./patch_linux
-#
-#  # Patch the kernel image
-#  cp $KERNEL_IMAGE ./Image
-#  sudo ./patch_linux
-#  mv oImage Image
-#  KERNEL_IMAGE=$(pwd)/Image
-#
-#  cd -
-#fi
+if [[ $KSU == "Suki" ]]; then
+  tempdir=$(mktemp -d) && cd $tempdir
+
+  # Setup patching tool
+  LATEST_SUKISU_PATCH=$(curl -s "https://api.github.com/repos/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/latest" | grep "browser_download_url" | grep "patch_linux" | cut -d '"' -f 4)
+  curl -Ls "$LATEST_SUKISU_PATCH" -o patch_linux
+  chmod a+x ./patch_linux
+
+  # Patch the kernel image
+  cp $KERNEL_IMAGE ./Image
+  sudo ./patch_linux
+  mv oImage Image
+  KERNEL_IMAGE=$(pwd)/Image
+
+  cd -
+fi
 
 # Clone AnyKernel
 log "Cloning anykernel from $(simplify_gh_url "$ANYKERNEL_REPO")"
