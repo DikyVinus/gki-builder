@@ -137,7 +137,7 @@ jobs:
           KVER: ${{ inputs.KERNEL_VERSION }}
         run: |
           export GIT_CLONE_PROTECTION_ACTIVE=false
-          chmod +x *.sh
+          chmod +x *.sh *.py
           ./build.sh
 
       - name: Upload Artifacts (ZIP & IMG)
