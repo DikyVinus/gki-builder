@@ -73,7 +73,10 @@ def main(abi_gki_aarch64_stg_file: str, vmlinux_symvers_file: str) -> int:
             line.split()[1]: crc_to_int(line.split()[0]) for line in f.readlines()
         }
 
-    # Removed the missing symbols warning section
+    if missing_symbols := abi_gki_aarch64_elf_symbols.keys() - vmlinux_symvers.keys():
+        print("Warning: The kernel image is missing the following symbols:")
+        for symbol in missing_symbols:
+            print('-', symbol)
 
     diff_crc_items = [
         (key, abi_gki_aarch64_elf_symbols[key], vmlinux_symvers[key])
