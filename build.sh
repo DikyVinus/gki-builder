@@ -248,6 +248,7 @@ fi
 export KBUILD_BUILD_USER="$USER"
 export KBUILD_BUILD_HOST="$HOST"
 export KBUILD_BUILD_TIMESTAMP=$(date)
+export KCFLAGS="-w"
 MAKE_ARGS=(
   LLVM=1
   ARCH=arm64
@@ -256,7 +257,8 @@ MAKE_ARGS=(
   O=$OUTDIR
 )
 KERNEL_IMAGE="$OUTDIR/arch/arm64/boot/Image"
-export KCFLAGS="-w"
+MODULE_SYMVERS="$OUTDIR/Module.symvers"
+KMI_CHECK="$WORKDIR/KMI_function_symbols_test.py"
 
 text=$(
   cat << EOF
@@ -293,10 +295,10 @@ fi
 
 # Build the actual kernel
 log "Building kernel..."
-make ${MAKE_ARGS[@]} Image
+make ${MAKE_ARGS[@]}
 
 # Check KMI Function symbol
-# $KMI_CHECK "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS"
+$KMI_CHECK "$KSRC/android/abi_gki_aarch64.stg" "$MODULE_SYMVERS" || true
 
 ## Post-compiling stuff
 cd $WORKDIR
