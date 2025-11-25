@@ -169,6 +169,7 @@ if susfs_included; then
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
     patch -p1 < $WORKDIR/kernel-patches/fs_proc_base.c-fix-k6.1.patch
   fi
+  patch -p1 < $WORKDIR/kernel-patches/fix-statfs-crc-mismatch-susfs.patch
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
   # KernelSU-side
