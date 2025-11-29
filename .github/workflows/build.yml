@@ -13,6 +13,8 @@ on:
         type: string
       LAST_BUILD:
         type: string
+      KERNEL_VERSION:
+        type: string
 
   workflow_dispatch:
     inputs:
