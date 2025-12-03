@@ -2,7 +2,7 @@
 
 # Constants
 WORKDIR="$(pwd)"
-RELEASE="v0.2"
+RELEASE="v0.3"
 KERNEL_NAME="qx+"
 USER="eraselk"
 HOST="gacorprjkt"
