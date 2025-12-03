@@ -3,7 +3,7 @@
 # Constants
 WORKDIR="$(pwd)"
 RELEASE="v0.2"
-KERNEL_NAME="QuartiX"
+KERNEL_NAME="qx+"
 USER="eraselk"
 HOST="gacorprjkt"
 TIMEZONE="Asia/Makassar"
