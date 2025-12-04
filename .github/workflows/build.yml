@@ -34,7 +34,7 @@ on:
           - "None"
           - "Next"
           - "Suki"
-          - "Magic"
+          - "Biasa"
 
       KSU_SUSFS:
         description: Include SUSFS?

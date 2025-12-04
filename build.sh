@@ -52,7 +52,7 @@ log "Setting Kernel variant..."
 case "$KSU" in
   "Next") VARIANT="KSUN" ;;
   "Suki") VARIANT="SUKISU" ;;
-  "Magic") VARIANT="MKSU" ;;
+  "Biasa") VARIANT="KSU" ;;
   "None") VARIANT="NKSU" ;;
 esac
 susfs_included && VARIANT+="+SuSFS"
@@ -139,7 +139,7 @@ if ksu_included; then
   # Install kernelsu
   case "$KSU" in
     "Next") install_ksu KernelSU-Next/KernelSU-Next next ;;
-    "Magic") install_ksu 5ec1cff/KernelSU main ;;
+    "Biasa") install_ksu tiann/KernelSU main ;;
     "Suki") install_ksu SukiSU-Ultra/SukiSU-Ultra $(if susfs_included; then echo "susfs-main"; elif ksu_manual_hook; then echo "nongki"; else echo "main"; fi) ;;
   esac
   config --enable CONFIG_KSU
@@ -173,7 +173,7 @@ if susfs_included; then
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
   # KernelSU-side
-  if [ "$KSU" == "Next" ] || [ "$KSU" == "Magic" ]; then
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
     log "Applying kernelsu-side susfs patches.."
     if [ "$KSU" == "Next" ]; then
       KERNEL_PATCHES_DIR="$PWD/kernel_patches"
@@ -186,13 +186,13 @@ if susfs_included; then
 
     if [ "$KSU" == "Next" ]; then
       cd KernelSU-Next
-    elif [ "$KSU" == "Magic" ]; then
+    elif [ "$KSU" == "Biasa" ]; then
       cd KernelSU
     fi
 
     if [ "$KSU" == "Next" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
-    elif [ "$KSU" == "Magic" ]; then
+    elif [ "$KSU" == "Biasa" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
     fi
 
@@ -212,7 +212,7 @@ else
 fi
 
 # KSU Manual Hooks
-if ksu_included && ! susfs_included && ! [ "$KSU" == "Magic" ]; then
+if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ]; then
   log "Applying manual hook patch"
   if [[ "$KSU" == "Suki" ]]; then
     patch -p1 --forward < $WORKDIR/kernel-patches/manual-hook-v1.6.patch
@@ -222,11 +222,6 @@ if ksu_included && ! susfs_included && ! [ "$KSU" == "Magic" ]; then
   config --enable CONFIG_KSU_MANUAL_HOOK
   config --disable CONFIG_KSU_KPROBES_HOOK
   config --disable CONFIG_KSU_SUSFS_SUS_SU # Conflicts with manual hook
-fi
-
-# Disable SuS_SU for MKSU
-if [ "$KSU" == "Magic" ] && susfs_included; then
-  config --disable CONFIG_KSU_SUSFS_SUS_SU
 fi
 
 # Enable KPM Supports for SukiSU

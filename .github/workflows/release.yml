@@ -9,8 +9,8 @@ jobs:
       matrix:
         variant:
           - { name: "Non-KSU", KSU: "None", KSU_SUSFS: "false", LAST_BUILD: "false" }
-          - { name: "KSU", KSU: "Magic", KSU_SUSFS: "false", LAST_BUILD: "false" }
-          - { name: "KSU_SUSFS", KSU: "Magic", KSU_SUSFS: "true", LAST_BUILD: "true" }
+          - { name: "KSU", KSU: "Biasa", KSU_SUSFS: "false", LAST_BUILD: "false" }
+          - { name: "KSU_SUSFS", KSU: "Biasa", KSU_SUSFS: "true", LAST_BUILD: "true" }
     name: Build ${{ matrix.variant.name }} variant
     uses: ./.github/workflows/build.yml
     secrets: inherit
