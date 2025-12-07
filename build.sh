@@ -2,7 +2,13 @@
 
 # Constants
 WORKDIR="$(pwd)"
-RELEASE="v0.3"
+if [ "$KVER" == "6.6" ]; then
+  RELEASE="v0.3"
+elif [ "$KVER" == "5.10" ]; then
+  RELEASE="v0.1"
+elif [ "$KVER" == "6.1" ]; then
+  RELEASE="v0.1"
+fi
 KERNEL_NAME="qx+"
 USER="eraselk"
 HOST="gacorprjkt"
@@ -17,6 +23,10 @@ elif [ "$KVER" == "6.1" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android14-6.1"
   ANYKERNEL_BRANCH="android14-6.1"
   KERNEL_BRANCH="android14-6.1-lts"
+elif [ "$KVER" == "5.10" ]; then
+  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
+  ANYKERNEL_BRANCH="android12-5.10"
+  KERNEL_BRANCH="master"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/linastorvaldz/quartix-releases"
@@ -108,6 +118,8 @@ if [ "$KVER" == "6.6" ]; then
   KBUILD_TOOLS_BRANCH=main-kernel-build-2024
 elif [ "$KVER" == "6.1" ]; then
   KBUILD_TOOLS_BRANCH=main-kernel-build-2023
+elif [ "$KVER" == "5.10" ]; then
+  KBUILD_TOOLS_BRANCH=main-kernel-build-2021
 fi
 git clone --depth=1 -q \
   https://android.googlesource.com/kernel/prebuilts/build-tools \
@@ -156,6 +168,8 @@ if susfs_included; then
     SUSFS_BRANCH=gki-android15-6.6
   elif [ "$KVER" == "6.1" ]; then
     SUSFS_BRANCH=gki-android14-6.1
+  elif [ "$KVER" == "5.10" ]; then
+    SUSFS_BRANCH=gki-android12-5.10
   fi
   git clone --depth=1 -q https://gitlab.com/simonpunk/susfs4ksu -b $SUSFS_BRANCH $SUSFS_DIR
   cp -R $SUSFS_PATCHES/fs/* ./fs
@@ -169,7 +183,9 @@ if susfs_included; then
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
     patch -p1 < $WORKDIR/kernel-patches/fs_proc_base.c-fix-k6.1.patch
   fi
-  patch -p1 < $WORKDIR/kernel-patches/fix-statfs-crc-mismatch-susfs.patch
+  if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
+    patch -p1 < $WORKDIR/kernel-patches/fix-statfs-crc-mismatch-susfs.patch
+  fi
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
   # KernelSU-side
@@ -235,9 +251,9 @@ if [[ $TODO == "kernel" ]]; then
   if [[ $STATUS == "BETA" ]]; then
     SUFFIX="$LATEST_COMMIT_HASH"
   else
-    SUFFIX="${RELEASE}-${LATEST_COMMIT_HASH}"
+    SUFFIX="${RELEASE}@${LATEST_COMMIT_HASH}"
   fi
-  config --set-str CONFIG_LOCALVERSION "-$KERNEL_NAME-$SUFFIX"
+  config --set-str CONFIG_LOCALVERSION "-$KERNEL_NAME/$SUFFIX"
 fi
 
 # Declare needed variables
@@ -245,16 +261,32 @@ export KBUILD_BUILD_USER="$USER"
 export KBUILD_BUILD_HOST="$HOST"
 export KBUILD_BUILD_TIMESTAMP=$(date)
 export KCFLAGS="-w"
-MAKE_ARGS=(
-  LLVM=1
-  ARCH=arm64
-  CROSS_COMPILE=aarch64-linux-android-
-  -j$(nproc --all)
-  O=$OUTDIR
-)
+if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
+  MAKE_ARGS=(
+    LLVM=1
+    ARCH=arm64
+    CROSS_COMPILE=aarch64-linux-android-
+    -j$(nproc --all)
+    O=$OUTDIR
+  )
+else
+  MAKE_ARGS=(
+    LLVM=1
+    LLVM_IAS=1
+    ARCH=arm64
+    CROSS_COMPILE=aarch64-linux-android-
+    -j$(nproc --all)
+    O=$OUTDIR
+  )
+fi
+
 KERNEL_IMAGE="$OUTDIR/arch/arm64/boot/Image"
 MODULE_SYMVERS="$OUTDIR/Module.symvers"
-KMI_CHECK="$WORKDIR/KMI_function_symbols_test.py"
+if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
+  KMI_CHECK="$WORKDIR/py/kmi-check-6.x.py"
+else
+  KMI_CHECK="$WORKDIR/py/kmi-check-5.x.py"
+fi
 
 text=$(
   cat << EOF
@@ -294,7 +326,11 @@ log "Building kernel..."
 make ${MAKE_ARGS[@]}
 
 # Check KMI Function symbol
-$KMI_CHECK "$KSRC/android/abi_gki_aarch64.stg" "$MODULE_SYMVERS" || true
+if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
+  $KMI_CHECK "$KSRC/android/abi_gki_aarch64.stg" "$MODULE_SYMVERS" || true
+else
+  $KMI_CHECK "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS" || true
+fi
 
 ## Post-compiling stuff
 cd $WORKDIR
