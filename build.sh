@@ -119,7 +119,7 @@ if [ "$KVER" == "6.6" ]; then
 elif [ "$KVER" == "6.1" ]; then
   KBUILD_TOOLS_BRANCH=main-kernel-build-2023
 elif [ "$KVER" == "5.10" ]; then
-  KBUILD_TOOLS_BRANCH=main-kernel-build-2021
+  KBUILD_TOOLS_BRANCH=master-kernel-build-2021
 fi
 git clone --depth=1 -q \
   https://android.googlesource.com/kernel/prebuilts/build-tools \
