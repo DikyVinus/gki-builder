@@ -254,6 +254,8 @@ if [[ $TODO == "kernel" ]]; then
     SUFFIX="${RELEASE}@${LATEST_COMMIT_HASH}"
   fi
   config --set-str CONFIG_LOCALVERSION "-$KERNEL_NAME/$SUFFIX"
+  config --disable CONFIG_LOCALVERSION_AUTO
+  sed -i 's/echo "+"/# echo "+"/g' scripts/setlocalversion
 fi
 
 # Declare needed variables
