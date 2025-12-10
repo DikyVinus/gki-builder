@@ -14,7 +14,7 @@ USER="eraselk"
 HOST="gacorprjkt"
 TIMEZONE="Asia/Makassar"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-KERNEL_DEFCONFIG="quartix_defconfig"
+KERNEL_DEFCONFIG="gki_defconfig"
 if [ "$KVER" == "6.6" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
   ANYKERNEL_BRANCH="android15-6.6"
@@ -24,9 +24,9 @@ elif [ "$KVER" == "6.1" ]; then
   ANYKERNEL_BRANCH="android14-6.1"
   KERNEL_BRANCH="android14-6.1-lts"
 elif [ "$KVER" == "5.10" ]; then
-  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
+  KERNEL_REPO="https://github.com/ztc1997/android_gki_kernel_5.10_common"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="master"
+  KERNEL_BRANCH="android12-5.10-2025-09"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/linastorvaldz/quartix-releases"
