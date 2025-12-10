@@ -102,31 +102,15 @@ else
   git clone --depth=1 -q "$CLANG_URL" -b "$CLANG_BRANCH" "$CLANG_DIR"
 fi
 
-# Clone GCC
-log "Cloning GCC..."
-GCC_DIR="$WORKDIR/gcc"
-GCC_BIN="${GCC_DIR}/bin"
+# Clone GNU Assembler
+log "Cloning GNU Assembler..."
+GAS_DIR="$WORKDIR/gas"
 git clone --depth=1 -q \
-  https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 \
-  $GCC_DIR
+  https://android.googlesource.com/platform/prebuilts/gas/linux-x86 \
+  -b main \
+  "$GAS_DIR"
 
-# Clone kernel build tools
-log "Cloning Kbuild tools..."
-KBUILD_TOOLS_DIR="$WORKDIR/kbuild-tools"
-KBUILD_TOOLS_BIN="${KBUILD_TOOLS_DIR}/linux-x86/bin"
-if [ "$KVER" == "6.6" ]; then
-  KBUILD_TOOLS_BRANCH=main-kernel-build-2024
-elif [ "$KVER" == "6.1" ]; then
-  KBUILD_TOOLS_BRANCH=main-kernel-build-2023
-elif [ "$KVER" == "5.10" ]; then
-  KBUILD_TOOLS_BRANCH=master-kernel-build-2021
-fi
-git clone --depth=1 -q \
-  https://android.googlesource.com/kernel/prebuilts/build-tools \
-  -b $KBUILD_TOOLS_BRANCH \
-  $KBUILD_TOOLS_DIR
-
-export PATH="${CLANG_BIN}:${GCC_BIN}:${KBUILD_TOOLS_BIN}:$PATH"
+export PATH="${CLANG_BIN}:${GAS_DIR}:$PATH"
 
 # Extract clang version
 COMPILER_STRING=$(clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')
@@ -267,7 +251,8 @@ if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
   MAKE_ARGS=(
     LLVM=1
     ARCH=arm64
-    CROSS_COMPILE=aarch64-linux-android-
+    CROSS_COMPILE=aarch64-linux-gnu-
+    CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
     -j$(nproc --all)
     O=$OUTDIR
   )
@@ -276,7 +261,8 @@ else
     LLVM=1
     LLVM_IAS=1
     ARCH=arm64
-    CROSS_COMPILE=aarch64-linux-android-
+    CROSS_COMPILE=aarch64-linux-gnu-
+    CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
     -j$(nproc --all)
     O=$OUTDIR
   )
