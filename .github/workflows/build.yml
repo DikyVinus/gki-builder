@@ -44,6 +44,14 @@ on:
           - "true"
           - "false"
 
+      KSU_MANUAL_HOOK:
+        description: Use KSU Manual Hooks?
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
       KERNEL_VERSION:
         description: Which kernel version do you want to build?
         default: ""
@@ -84,6 +92,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
+          KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
         run: |
           _error() {
               echo "❌ ERROR: $*"
@@ -105,6 +114,9 @@ jobs:
           # Check KernelSU variants
           if [[ $KSU == "None" && $KSU_SUSFS == "true" ]]; then
               _error "Cannot use SuSFS without KernelSU"
+          fi
+          if [[ $KSU == "None" && $KSU_MANUAL_HOOK == "true" ]]; then
+            _error "Cannot use KSU Manual Hooks without KernelSU!"
           fi
 
           if [[ $ret -gt 0 ]]; then
@@ -136,6 +148,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
+          KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
           LAST_BUILD: ${{ inputs.LAST_BUILD }}
           TODO: ${{ inputs.TODO }}
           KVER: ${{ inputs.KERNEL_VERSION }}

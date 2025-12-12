@@ -212,7 +212,7 @@ else
 fi
 
 # KSU Manual Hooks
-if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ]; then
+if ksu_manual_hook && ! susfs_included; then
   log "Applying manual hook patch"
   if [[ "$KSU" == "Suki" ]]; then
     patch -p1 --forward < $WORKDIR/kernel-patches/manual-hook-v1.6.patch
