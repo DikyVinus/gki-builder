@@ -134,7 +134,7 @@ if ksu_included; then
 
   # Install kernelsu
   case "$KSU" in
-    "Next") install_ksu KernelSU-Next/KernelSU-Next next ;;
+    "Next") install_ksu KernelSU-Next/KernelSU-Next dev ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Suki") install_ksu SukiSU-Ultra/SukiSU-Ultra $(if susfs_included; then echo "susfs-main"; elif ksu_manual_hook; then echo "nongki"; else echo "main"; fi) ;;
   esac
