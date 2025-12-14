@@ -75,7 +75,7 @@ AK3_ZIP_NAME=${AK3_ZIP_NAME//VARIANT/$VARIANT}
 # Download Clang
 CLANG_DIR="$WORKDIR/clang"
 CLANG_BIN="${CLANG_DIR}/bin"
-if [[ -z "$CLANG_BRANCH" ]]; then
+if [ -z "$CLANG_BRANCH" ]; then
   log "🔽 Downloading Clang..."
   wget -qO clang-archive "$CLANG_URL"
   mkdir -p "$CLANG_DIR"
@@ -92,8 +92,8 @@ if [[ -z "$CLANG_BRANCH" ]]; then
   esac
   rm clang-archive
 
-  if [[ $(find "$CLANG_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l) -eq 1 ]] \
-    && [[ $(find "$CLANG_DIR" -mindepth 1 -maxdepth 1 -type f | wc -l) -eq 0 ]]; then
+  if [ $(find "$CLANG_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l) -eq 1 ] \
+    && [ $(find "$CLANG_DIR" -mindepth 1 -maxdepth 1 -type f | wc -l) -eq 0 ]; then
     SINGLE_DIR=$(find "$CLANG_DIR" -mindepth 1 -maxdepth 1 -type d)
     mv $SINGLE_DIR/* $CLANG_DIR/
     rm -rf $SINGLE_DIR
@@ -122,12 +122,12 @@ cd $KSRC
 if ksu_included; then
   # Remove existing KernelSU drivers
   for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU; do
-    if [[ -d $KSU_PATH ]]; then
+    if [ -d $KSU_PATH ]; then
       log "KernelSU driver found in $KSU_PATH, Removing..."
       KSU_DIR=$(dirname "$KSU_PATH")
 
-      [[ -f "$KSU_DIR/Kconfig" ]] && sed -i '/kernelsu/d' $KSU_DIR/Kconfig
-      [[ -f "$KSU_DIR/Makefile" ]] && sed -i '/kernelsu/d' $KSU_DIR/Makefile
+      [ -f "$KSU_DIR/Kconfig" ] && sed -i '/kernelsu/d' $KSU_DIR/Kconfig
+      [ -f "$KSU_DIR/Makefile" ] && sed -i '/kernelsu/d' $KSU_DIR/Makefile
 
       rm -rf $KSU_PATH
     fi
@@ -214,7 +214,7 @@ fi
 # KSU Manual Hooks
 if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ]; then
   log "Applying manual hook patch"
-  if [[ "$KSU" == "Suki" ]]; then
+  if [ "$KSU" == "Suki" ]; then
     patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
   else
     patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.4.patch
@@ -226,14 +226,14 @@ if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ]; then
 fi
 
 # Enable KPM Supports for SukiSU
-# if [[ $KSU == "Suki" ]]; then
+# if [ $KSU == "Suki" ]; then
 #   config --enable CONFIG_KPM
 # fi
 
 # set localversion
-if [[ $TODO == "kernel" ]]; then
+if [ $TODO == "kernel" ]; then
   LATEST_COMMIT_HASH=$(git rev-parse --short HEAD)
-  if [[ $STATUS == "BETA" ]]; then
+  if [ $STATUS == "BETA" ]; then
     SUFFIX="$LATEST_COMMIT_HASH"
   else
     SUFFIX="${RELEASE}@${LATEST_COMMIT_HASH}"
@@ -304,7 +304,7 @@ if [ "$DEFCONFIG_TO_MERGE" ]; then
 fi
 
 # Upload defconfig if we are doing defconfig
-if [[ $TODO == "defconfig" ]]; then
+if [ $TODO == "defconfig" ]; then
   log "Uploading defconfig..."
   upload_file $OUTDIR/.config
   exit 0
@@ -325,7 +325,7 @@ fi
 cd $WORKDIR
 
 # Patch the kernel Image for KPM Supports
-#if [[ $KSU == "Suki" ]]; then
+#if [ $KSU == "Suki" ]; then
 #  tempdir=$(mktemp -d) && cd $tempdir
 #
 #  # Setup patching tool
@@ -347,7 +347,7 @@ log "Cloning anykernel from $(simplify_gh_url "$ANYKERNEL_REPO")"
 git clone -q --depth=1 $ANYKERNEL_REPO -b $ANYKERNEL_BRANCH anykernel
 
 # Set kernel string in anykernel
-if [[ $STATUS == "BETA" ]]; then
+if [ $STATUS == "BETA" ]; then
   BUILD_DATE=$(date -d "$KBUILD_BUILD_TIMESTAMP" +"%Y%m%d-%H%M")
   AK3_ZIP_NAME=${AK3_ZIP_NAME//BUILD_DATE/$BUILD_DATE}
   AK3_ZIP_NAME=${AK3_ZIP_NAME//-REL/}
@@ -369,13 +369,13 @@ cp $KERNEL_IMAGE .
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
-if [[ $STATUS != "BETA" ]]; then
+if [ $STATUS != "BETA" ]; then
   echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
   mkdir -p $WORKDIR/artifacts
   mv $WORKDIR/*.zip $WORKDIR/artifacts
 fi
 
-if [[ $LAST_BUILD == "true" && $STATUS != "BETA" ]]; then
+if [ $LAST_BUILD == "true" && $STATUS != "BETA" ]; then
   (
     echo "LINUX_VERSION=$LINUX_VERSION"
     echo "SUSFS_VERSION=$(curl -s https://gitlab.com/simonpunk/susfs4ksu/raw/gki-android15-6.6/kernel_patches/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g')"
@@ -384,7 +384,7 @@ if [[ $LAST_BUILD == "true" && $STATUS != "BETA" ]]; then
   ) >> $WORKDIR/artifacts/info.txt
 fi
 
-if [[ $STATUS == "BETA" ]]; then
+if [ $STATUS == "BETA" ]; then
   upload_file "$WORKDIR/$AK3_ZIP_NAME" "$text"
   upload_file "$WORKDIR/build.log"
 else
