@@ -62,8 +62,8 @@ cd $WORKDIR
 log "Setting Kernel variant..."
 case "$KSU" in
   "Next") VARIANT="KSUN" ;;
-  "Suki") VARIANT="SUKISU" ;;
   "Biasa") VARIANT="KSU" ;;
+  "Rissu") VARIANT="RKSU" ;;
   "None") VARIANT="NKSU" ;;
 esac
 susfs_included && VARIANT+="+SuSFS"
@@ -137,7 +137,7 @@ if ksu_included; then
   case "$KSU" in
     "Next") install_ksu KernelSU-Next/KernelSU-Next next ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
-    "Suki") install_ksu SukiSU-Ultra/SukiSU-Ultra $(if susfs_included; then echo "susfs-main"; elif ksu_manual_hook; then echo "nongki"; else echo "main"; fi) ;;
+    "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
   esac
   config --enable CONFIG_KSU
   config --disable CONFIG_KSU_MANUAL_SU
@@ -214,7 +214,7 @@ fi
 # KSU Manual Hooks
 if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ] || ! [ "$KSU" == "Next" ]; then
   log "Applying manual hook patch"
-  if [ "$KSU" == "Suki" ]; then
+  if [ "$KSU" == "Rissu" ]; then
     patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
   else
     patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.4.patch
