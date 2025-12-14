@@ -220,8 +220,9 @@ if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ] || ! [ "$KSU" == 
     patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.4.patch
     patch -p1 --forward < $KERNEL_PATCHES/hooks/reboot-hook.patch
   fi
-  config --enable CONFIG_KSU_MANUAL_HOOK
+  config --enable  CONFIG_KSU_MANUAL_HOOK
   config --disable CONFIG_KSU_KPROBES_HOOK
+  config --disable CONFIG_KSU_SYSCALL_HOOK
   config --disable CONFIG_KSU_SUSFS_SUS_SU # Conflicts with manual hook
 fi
 
