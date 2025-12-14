@@ -8,12 +8,12 @@ jobs:
     strategy:
       matrix:
         variant:
-          - { name: "Non-KSU", KSU: "None", KSU_SUSFS: "false", LAST_BUILD: "false" }
-          - { name: "KSU", KSU: "Biasa", KSU_SUSFS: "false", LAST_BUILD: "false" }
-          - { name: "KSU_SUSFS", KSU: "Biasa", KSU_SUSFS: "true", LAST_BUILD: "false" }
-          - { name: "KSUN", KSU: "Next", KSU_SUSFS: "false", LAST_BUILD: "false" }
-          - { name: "RKSU", KSU: "Rissu", KSU_SUSFS: "false", LAST_BUILD: "false" }
-          - { name: "RKSU_SUSFS", KSU: "Rissu", KSU_SUSFS: "true", LAST_BUILD: "true" }
+          - { name: "Non-KSU", KSU: "None", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
+          - { name: "KSU", KSU: "Biasa", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
+          - { name: "KSU_SUSFS", KSU: "Biasa", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
+          - { name: "KSUN", KSU: "Next", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
+          - { name: "RKSU", KSU: "Rissu", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "true", LAST_BUILD: "false" }
+          - { name: "RKSU_SUSFS", KSU: "Rissu", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
 
     name: Build ${{ matrix.variant.name }} variant
     uses: ./.github/workflows/build.yml
@@ -22,6 +22,7 @@ jobs:
       KSU: ${{ matrix.variant.KSU }}
       KSU_SUSFS: ${{ matrix.variant.KSU_SUSFS }}
       LAST_BUILD: ${{ matrix.variant.LAST_BUILD }}
+      KSU_MANUAL_HOOK: ${{ matrix.variant.KSU_MANUAL_HOOK }}
       TODO: "kernel"
       KERNEL_VERSION: "5.10"
 
