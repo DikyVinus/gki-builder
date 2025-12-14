@@ -212,7 +212,7 @@ else
 fi
 
 # KSU Manual Hooks
-if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ] || ! [ "$KSU" == "Next" ]; then
+if ! susfs_included && ! [ "$KSU" == "Biasa" ] || ! [ "$KSU" == "Next" ]; then
   log "Applying manual hook patch"
 #  if [ "$KSU" == "Rissu" ]; then
 #    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch

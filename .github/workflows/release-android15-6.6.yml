@@ -1,4 +1,4 @@
-name: Release Build
+name: Release Build - android15-6.6
 
 on:
   workflow_dispatch:
@@ -10,7 +10,11 @@ jobs:
         variant:
           - { name: "Non-KSU", KSU: "None", KSU_SUSFS: "false", LAST_BUILD: "false" }
           - { name: "KSU", KSU: "Biasa", KSU_SUSFS: "false", LAST_BUILD: "false" }
-          - { name: "KSU_SUSFS", KSU: "Biasa", KSU_SUSFS: "true", LAST_BUILD: "true" }
+          - { name: "KSU_SUSFS", KSU: "Biasa", KSU_SUSFS: "true", LAST_BUILD: "false" }
+          - { name: "KSUN", KSU: "Next", KSU_SUSFS: "false", LAST_BUILD: "false" }
+          - { name: "RKSU", KSU: "Rissu", KSU_SUSFS: "false", LAST_BUILD: "false" }
+          - { name: "RKSU_SUSFS", KSU: "Rissu", KSU_SUSFS: "true", LAST_BUILD: "true" }
+
     name: Build ${{ matrix.variant.name }} variant
     uses: ./.github/workflows/build.yml
     secrets: inherit
@@ -94,7 +98,7 @@ jobs:
           files: release_files/**/*
           body: |
             ### 📢 ${{ env.RELEASE_TAG }} Builds
-            -> Linux ${{ env.LINUX_VERSION }} (android15-6.6-2025-01)
+            -> Linux ${{ env.LINUX_VERSION }} (android12-5.10-lts)
             -> SUSFS ඞ ${{ env.SUSFS_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
