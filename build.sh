@@ -36,6 +36,7 @@ CLANG_BRANCH=""
 AK3_ZIP_NAME="AK3-$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
 OUTDIR="$WORKDIR/out"
 KSRC="$WORKDIR/ksrc"
+KERNEL_PATCHES="$WORKDIR/kernel-patches"
 
 # Handle error
 exec > >(tee $WORKDIR/build.log) 2>&1
@@ -160,15 +161,15 @@ if susfs_included; then
   cp -R $SUSFS_PATCHES/include/* ./include
   patch -p1 < $SUSFS_PATCHES/50_add_susfs_in_${SUSFS_BRANCH}.patch || true
   if [ $LINUX_VERSION_CODE -eq 6630 ]; then
-    patch -p1 < $WORKDIR/kernel-patches/namespace.c_fix.patch
-    patch -p1 < $WORKDIR/kernel-patches/task_mmu.c_fix.patch
+    patch -p1 < $KERNEL_PATCHES/susfs/namespace.c_fix.patch
+    patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix.patch
   elif [ $LINUX_VERSION_CODE -eq 6658 ]; then
-    patch -p1 < $WORKDIR/kernel-patches/task_mmu.c_fix-k6.6.58.patch
+    patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix-k6.6.58.patch
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
-    patch -p1 < $WORKDIR/kernel-patches/fs_proc_base.c-fix-k6.1.patch
+    patch -p1 < $KERNEL_PATCHES/susfs/fs_proc_base.c-fix-k6.1.patch
   fi
   if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
-    patch -p1 < $WORKDIR/kernel-patches/fix-statfs-crc-mismatch-susfs.patch
+    patch -p1 < $KERNEL_PATCHES/susfs/fix-statfs-crc-mismatch-susfs.patch
   fi
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
@@ -176,8 +177,7 @@ if susfs_included; then
   if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
     log "Applying kernelsu-side susfs patches.."
     if [ "$KSU" == "Next" ]; then
-      KERNEL_PATCHES_DIR="$PWD/kernel_patches"
-      SUSFS_FIX_PATCHES="$KERNEL_PATCHES_DIR/next/susfs_fix_patches/$SUSFS_VERSION"
+      SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
       git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $KERNEL_PATCHES_DIR
       if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
         error "susfs fix patches are not available for susfs $SUSFS_VERSION."
@@ -211,13 +211,13 @@ else
   config --disable CONFIG_KSU_SUSFS
 fi
 
-# KSU Manual Hooks
+# Manual Hooks
 if ksu_manual_hook && ! susfs_included; then
   log "Applying manual hook patch"
   if [[ "$KSU" == "Suki" ]]; then
-    patch -p1 --forward < $WORKDIR/kernel-patches/manual-hook-v1.6.patch
+    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
   else
-    patch -p1 --forward < $WORKDIR/kernel-patches/manual-hook-v1.4.patch
+    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.4.patch
   fi
   config --enable CONFIG_KSU_MANUAL_HOOK
   config --disable CONFIG_KSU_KPROBES_HOOK
