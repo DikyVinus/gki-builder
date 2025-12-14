@@ -214,12 +214,12 @@ fi
 # KSU Manual Hooks
 if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ] || ! [ "$KSU" == "Next" ]; then
   log "Applying manual hook patch"
-  if [ "$KSU" == "Rissu" ]; then
-    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
-  else
+#  if [ "$KSU" == "Rissu" ]; then
+#    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
+#  else
     patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.4.patch
     patch -p1 --forward < $KERNEL_PATCHES/hooks/reboot-hook.patch
-  fi
+#  fi
   config --enable CONFIG_KSU_MANUAL_HOOK
   config --disable CONFIG_KSU_KPROBES_HOOK
   config --disable CONFIG_KSU_SYSCALL_HOOK
