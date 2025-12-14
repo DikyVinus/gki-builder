@@ -211,8 +211,8 @@ else
   config --disable CONFIG_KSU_SUSFS
 fi
 
-# KSU Manual Hooks
-if ! susfs_included && ! [ "$KSU" == "Biasa" ] || ! [ "$KSU" == "Next" ]; then
+# Manual Hooks
+if ksu_manual_hook; then
   log "Applying manual hook patch"
 #  if [ "$KSU" == "Rissu" ]; then
 #    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
