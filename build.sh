@@ -135,7 +135,7 @@ if ksu_included; then
 
   # Install kernelsu
   case "$KSU" in
-    "Next") install_ksu KernelSU-Next/KernelSU-Next next ;;
+    "Next") install_ksu KernelSU-Next/KernelSU-Next dev ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
   esac
