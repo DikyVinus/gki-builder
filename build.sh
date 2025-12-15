@@ -178,7 +178,7 @@ if susfs_included; then
     log "Applying kernelsu-side susfs patches.."
     if [ "$KSU" == "Next" ]; then
       SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
-      git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $KERNEL_PATCHES_DIR
+      git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $PWD/kernel_patches
       if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
         error "susfs fix patches are not available for susfs $SUSFS_VERSION."
       fi
@@ -197,9 +197,10 @@ if susfs_included; then
     fi
 
     if [ "$KSU" == "Next" ]; then
+      log "Applying the susfs fix patches..."
       # apply the fix patches
       for p in "$SUSFS_FIX_PATCHES"/*.patch; do
-        patch -p1 --forward --fuzz=3 < $p
+        patch -p1 < $p
       done
       # cleanup .orig / .rej
       find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
