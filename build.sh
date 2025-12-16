@@ -200,7 +200,7 @@ if susfs_included; then
       log "Applying the susfs fix patches..."
       # apply the fix patches
       for p in "$SUSFS_FIX_PATCHES"/*.patch; do
-        patch -p1 < $p
+        patch -p1 --forward < $p
       done
       # cleanup .orig / .rej
       find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
