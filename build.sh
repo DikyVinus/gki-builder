@@ -177,7 +177,7 @@ if susfs_included; then
   if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
     log "Applying kernelsu-side susfs patches.."
     if [ "$KSU" == "Next" ]; then
-      SUSFS_FIX_PATCHES="$PWD/kernel_patches/wild/susfs_fix_patches/$SUSFS_VERSION"
+      SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
       git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $PWD/kernel_patches
       if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
         error "susfs fix patches are not available for susfs $SUSFS_VERSION."
