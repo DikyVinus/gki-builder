@@ -135,7 +135,7 @@ if ksu_included; then
 
   # Install kernelsu
   case "$KSU" in
-    "Next") install_ksu KernelSU-Next/KernelSU-Next dev ;;
+    "Next") install_ksu linastorvaldz/KernelSU-Next dev-susfs ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
   esac
@@ -176,36 +176,47 @@ if susfs_included; then
   # KernelSU-side
   if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
     log "Applying kernelsu-side susfs patches.."
-    if [ "$KSU" == "Next" ]; then
-      SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
-      git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $PWD/kernel_patches
-      if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
-        error "susfs fix patches are not available for susfs $SUSFS_VERSION."
+
+    if false; then
+      if [ "$KSU" == "Next" ]; then
+        SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
+        git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $PWD/kernel_patches
+        if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
+          error "susfs fix patches are not available for susfs $SUSFS_VERSION."
+        fi
       fi
     fi
 
     if [ "$KSU" == "Next" ]; then
-      cd KernelSU-Next
+      if false; then
+        cd KernelSU-Next
+      fi
     elif [ "$KSU" == "Biasa" ]; then
       cd KernelSU
     fi
 
     if [ "$KSU" == "Next" ]; then
-      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
+      if false; then
+        patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
+      fi
     elif [ "$KSU" == "Biasa" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
     fi
 
-    if [ "$KSU" == "Next" ]; then
-      log "Applying the susfs fix patches..."
-      # apply the fix patches
-      for p in "$SUSFS_FIX_PATCHES"/*.patch; do
-        patch -p1 --forward < $p
-      done
-      # cleanup .orig / .rej
-      find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
+    if false; then
+      if [ "$KSU" == "Next" ]; then
+        log "Applying the susfs fix patches..."
+        # apply the fix patches
+        for p in "$SUSFS_FIX_PATCHES"/*.patch; do
+          patch -p1 --forward < $p
+        done
+        # cleanup .orig / .rej
+        find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
+      fi
     fi
-    cd $OLDPWD
+    if ! [ "$KSU" == "Next" ]; then
+      cd $OLDPWD
+    fi
   fi
   config --enable CONFIG_KSU_SUSFS
 else
