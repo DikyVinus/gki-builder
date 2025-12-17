@@ -10,6 +10,7 @@ jobs:
         variant:
           - { name: "Non-KSU", KSU: "None", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
           - { name: "KSUN", KSU: "Next", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
+          - { name: "KSUN_SUSFS", KSU: "Next", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
           - { name: "RKSU", KSU: "Rissu", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
           - { name: "RKSU_SUSFS", KSU: "Rissu", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
 
