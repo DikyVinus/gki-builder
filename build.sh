@@ -9,7 +9,7 @@ elif [ "$KVER" == "5.10" ]; then
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
-KERNEL_NAME="Boltx"
+KERNEL_NAME="BoltX"
 USER="boltx"
 HOST="boltx"
 TIMEZONE="Asia/jakarta"
@@ -29,7 +29,7 @@ elif [ "$KVER" == "5.10" ]; then
   KERNEL_BRANCH="mglru"
 fi
 DEFCONFIG_TO_MERGE=""
-# --- PERBAIKAN 1: Menambahkan kutipan penutup yang hilang ---
+# --- PERBAIKAN 1: Menambahkan kutipan penutup ---
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
 CLANG_URL="$(./clang.sh slim)"
