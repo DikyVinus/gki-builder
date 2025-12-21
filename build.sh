@@ -12,7 +12,7 @@ fi
 KERNEL_NAME="BoltX"
 USER="BoltX"
 HOST="BoltX"
-TIMEZONE="Asia/Makassar"
+TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 KERNEL_DEFCONFIG="quartix_defconfig"
 if [ "$KVER" == "6.6" ]; then
