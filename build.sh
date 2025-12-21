@@ -10,9 +10,9 @@ elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
 KERNEL_NAME="BoltX"
-USER="boltx"
-HOST="boltx"
-TIMEZONE="Asia/Makassar"
+USER="bolt"
+HOST="boltX"
+TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 KERNEL_DEFCONFIG="quartix_defconfig"
 if [ "$KVER" == "6.6" ]; then
@@ -29,7 +29,6 @@ elif [ "$KVER" == "5.10" ]; then
   KERNEL_BRANCH="mglru"
 fi
 DEFCONFIG_TO_MERGE=""
-# --- PERBAIKAN 1: Menambahkan kutipan penutup ---
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
 CLANG_URL="$(./clang.sh slim)"
@@ -366,16 +365,14 @@ if [ $STATUS == "BETA" ]; then
   BUILD_DATE=$(date -d "$KBUILD_BUILD_TIMESTAMP" +"%Y%m%d-%H%M")
   AK3_ZIP_NAME=${AK3_ZIP_NAME//BUILD_DATE/$BUILD_DATE}
   AK3_ZIP_NAME=${AK3_ZIP_NAME//-REL/}
-  # --- PERBAIKAN 2: Mengganti kutip pada perintah sed ---
   sed -i \
-    's/kernel.string=.*/kernel.string='"${KERNEL_NAME} ${LINUX_VERSION} (${BUILD_DATE}) ${VARIANT}"'/g' \
+    "s/kernel.string=.*/kernel.string=${KERNEL_NAME} ${LINUX_VERSION} (${BUILD_DATE}) ${VARIANT}/g" \
     $WORKDIR/anykernel/anykernel.sh
 else
   AK3_ZIP_NAME=${AK3_ZIP_NAME//-BUILD_DATE/}
   AK3_ZIP_NAME=${AK3_ZIP_NAME//REL/$RELEASE}
-  # --- PERBAIKAN 2: Mengganti kutip pada perintah sed ---
   sed -i \
-    's/kernel.string=.*/kernel.string='"${KERNEL_NAME} ${RELEASE} ${LINUX_VERSION} ${VARIANT}"'/g' \
+    "s/kernel.string=.*/kernel.string=${KERNEL_NAME} ${RELEASE} ${LINUX_VERSION} ${VARIANT}/g" \
     $WORKDIR/anykernel/anykernel.sh
 fi
 
