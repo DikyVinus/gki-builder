@@ -26,7 +26,7 @@ elif [ "$KVER" == "6.1" ]; then
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="mglru"
+  KERNEL_BRANCH="master"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
@@ -221,6 +221,13 @@ if susfs_included; then
   config --enable CONFIG_KSU_SUSFS
 else
   config --disable CONFIG_KSU_SUSFS
+fi
+
+# Apply some kernelsu patches
+if [ "$KSU" == "Rissu" ]; then
+  cd KernelSU
+  patch -p1 < "$KERNEL_PATCHES"/ksu/rksu-add-mambosu-manager-support.patch
+  cd "$OLDPWD"
 fi
 
 # Manual Hooks
