@@ -10,9 +10,9 @@ elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
 KERNEL_NAME="BoltX"
-USER="bolt"
-HOST="boltX"
-TIMEZONE="Asia/Jakarta"
+USER="BoltX"
+HOST="BoltX"
+TIMEZONE="Asia/Makassar"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 KERNEL_DEFCONFIG="quartix_defconfig"
 if [ "$KVER" == "6.6" ]; then
