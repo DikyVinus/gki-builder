@@ -223,6 +223,13 @@ else
   config --disable CONFIG_KSU_SUSFS
 fi
 
+# Apply some kernelsu patches
+if [ "$KSU" == "Rissu" ]; then
+  cd KernelSU
+  patch -p1 < "$KERNEL_PATCHES"/ksu/rksu-add-mambosu-manager-support.patch
+  cd "$OLDPWD"
+fi
+
 # Manual Hooks
 if ksu_manual_hook; then
   #  log "Applying manual hook patch"
