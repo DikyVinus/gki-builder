@@ -5,7 +5,7 @@ WORKDIR="$(pwd)"
 if [ "$KVER" == "6.6" ]; then
   RELEASE="v0.3"
 elif [ "$KVER" == "5.10" ]; then
-  RELEASE="v0.2"
+  RELEASE="v0.1"
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
@@ -135,7 +135,7 @@ if ksu_included; then
 
   # Install kernelsu
   case "$KSU" in
-    "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'KernelSU-Next/KernelSU-Next dev') ;;
+    "Next") install_ksu KernelSU-Next/KernelSU-Next next ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
   esac
@@ -176,74 +176,54 @@ if susfs_included; then
   # KernelSU-side
   if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
     log "Applying kernelsu-side susfs patches.."
-
-    if false; then
-      if [ "$KSU" == "Next" ]; then
-        SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
-        git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $PWD/kernel_patches
-        if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
-          error "susfs fix patches are not available for susfs $SUSFS_VERSION."
-        fi
+    if [ "$KSU" == "Next" ]; then
+      SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
+      git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $KERNEL_PATCHES_DIR
+      if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
+        error "susfs fix patches are not available for susfs $SUSFS_VERSION."
       fi
     fi
 
     if [ "$KSU" == "Next" ]; then
-      if false; then
-        cd KernelSU-Next
-      fi
+      cd KernelSU-Next
     elif [ "$KSU" == "Biasa" ]; then
       cd KernelSU
     fi
 
     if [ "$KSU" == "Next" ]; then
-      if false; then
-        patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
-      fi
+      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
     elif [ "$KSU" == "Biasa" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
     fi
 
-    if false; then
-      if [ "$KSU" == "Next" ]; then
-        log "Applying the susfs fix patches..."
-        # apply the fix patches
-        for p in "$SUSFS_FIX_PATCHES"/*.patch; do
-          patch -p1 --forward < $p
-        done
-        # cleanup .orig / .rej
-        find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
-      fi
+    if [ "$KSU" == "Next" ]; then
+      # apply the fix patches
+      for p in "$SUSFS_FIX_PATCHES"/*.patch; do
+        patch -p1 --forward --fuzz=3 < $p
+      done
+      # cleanup .orig / .rej
+      find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
     fi
-    if ! [ "$KSU" == "Next" ]; then
-      cd $OLDPWD
-    fi
+    cd $OLDPWD
   fi
   config --enable CONFIG_KSU_SUSFS
 else
   config --disable CONFIG_KSU_SUSFS
 fi
 
-# Apply some kernelsu patches
-if [ "$KSU" == "Rissu" ]; then
-  cd KernelSU
-  patch -p1 < "$KERNEL_PATCHES"/ksu/rksu-add-mambosu-manager-support.patch
-  cd "$OLDPWD"
-fi
-
-# Manual Hooks
-if ksu_manual_hook; then
-  #  log "Applying manual hook patch"
-  #  if [ "$KSU" == "Rissu" ]; then
-  #    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
-  #  else
-  #    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.4.patch
-  #    patch -p1 --forward < $KERNEL_PATCHES/hooks/reboot-hook.patch
-  #  fi
-  #  config --enable CONFIG_KSU_MANUAL_HOOK
-  #  config --disable CONFIG_KSU_KPROBES_HOOK
-  #  config --disable CONFIG_KSU_SYSCALL_HOOK
-  #  config --disable CONFIG_KSU_SUSFS_SUS_SU # Conflicts with manual hook
-  : "DUMMY"
+# KSU Manual Hooks
+if ksu_included && ! susfs_included && ! [ "$KSU" == "Biasa" ] || ! [ "$KSU" == "Next" ]; then
+  log "Applying manual hook patch"
+#  if [ "$KSU" == "Rissu" ]; then
+#    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
+#  else
+    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.4.patch
+    patch -p1 --forward < $KERNEL_PATCHES/hooks/reboot-hook.patch
+#  fi
+  config --enable CONFIG_KSU_MANUAL_HOOK
+  config --disable CONFIG_KSU_KPROBES_HOOK
+  config --disable CONFIG_KSU_SYSCALL_HOOK
+  config --disable CONFIG_KSU_SUSFS_SUS_SU # Conflicts with manual hook
 fi
 
 # Enable KPM Supports for SukiSU
