@@ -98,7 +98,7 @@ jobs:
           files: release_files/**/*
           body: |
             ### 📢 ${{ env.RELEASE_TAG }} Builds
-            -> Linux ${{ env.LINUX_VERSION }} (android15-6.6-2025-01)
+            -> Linux ${{ env.LINUX_VERSION }} (android12-10.xxx)
             -> SUSFS ඞ ${{ env.SUSFS_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
