@@ -26,12 +26,12 @@ elif [ "$KVER" == "6.1" ]; then
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="mglru"
+  KERNEL_BRANCH="master"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
-CLANG_URL="https://github.com/linastorvaldz/stuffs/releases/download/clang-r416183b/linux-x86-bd96dfe349c962681f0e5388af874c771ef96670-clang-r416183b.tar.gz"
+CLANG_URL="$(./clang.sh slim)"
 CLANG_BRANCH=""
 AK3_ZIP_NAME="AK3-$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
 OUTDIR="$WORKDIR/out"
