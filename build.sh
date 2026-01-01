@@ -9,7 +9,7 @@ elif [ "$KVER" == "5.10" ]; then
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
-KERNEL_NAME="BoltX"
+KERNEL_NAME="BX"
 USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
@@ -26,7 +26,7 @@ elif [ "$KVER" == "6.1" ]; then
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="master"
+  KERNEL_BRANCH="master-new"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
@@ -135,7 +135,7 @@ if ksu_included; then
 
   # Install kernelsu
   case "$KSU" in
-    "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'KernelSU-Next/KernelSU-Next dev') ;;
+    "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
   esac
