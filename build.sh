@@ -14,7 +14,8 @@ USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-KERNEL_DEFCONFIG="quartix_defconfig"
+# FIXED: Ubah ke gki_defconfig agar sesuai dengan kernel target dan script inject
+KERNEL_DEFCONFIG="gki_defconfig"
 if [ "$KVER" == "6.6" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
   ANYKERNEL_BRANCH="android15-6.6"
@@ -55,7 +56,19 @@ git clone -q --depth=1 $KERNEL_REPO -b $KERNEL_BRANCH $KSRC
 cd $KSRC
 LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
+# FIXED: Script inject akan menangani penambahan config, jadi cari file defconfig yang benar
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
+
+# --- TAMBAHKAN SCRIPT INJECT DISINI ---
+log "Injecting custom KSU & SuSFS configs from GitHub..."
+# Export agar script inject bisa baca env vars
+export KSU
+export KSU_SUSFS
+wget -qO inject.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/gki_defconfig.sh
+bash inject.sh
+rm inject.sh
+# --------------------------------------
+
 cd $WORKDIR
 
 # Set Kernel variant
@@ -139,8 +152,9 @@ if ksu_included; then
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
   esac
-  config --enable CONFIG_KSU
-  config --disable CONFIG_KSU_MANUAL_SU
+  # FIXED: Config ini sudah dihandle oleh script inject, jadi di-disable manual di sini
+  # config --enable CONFIG_KSU
+  # config --disable CONFIG_KSU_MANUAL_SU
 fi
 
 # SUSFS
@@ -218,9 +232,11 @@ if susfs_included; then
       cd $OLDPWD
     fi
   fi
-  config --enable CONFIG_KSU_SUSFS
+  # FIXED: Config ini sudah dihandle oleh script inject
+  # config --enable CONFIG_KSU_SUSFS
 else
-  config --disable CONFIG_KSU_SUSFS
+  # FIXED: Config ini sudah dihandle oleh script inject
+  # config --disable CONFIG_KSU_SUSFS
 fi
 
 # Apply some kernelsu patches
