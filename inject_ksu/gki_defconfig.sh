@@ -10,6 +10,7 @@ cat >> $DEFCONFIG <<EOF
 # ===============================================
 # Konfigurasi KernelSU Next (Base)
 CONFIG_KSU=y
+CONFIG_KPM=y
 # Kprobes is a hard dependency for KSU-Next
 CONFIG_KPROBES=y
 CONFIG_KPROBE_EVENTS=y
