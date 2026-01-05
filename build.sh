@@ -14,15 +14,15 @@ USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-KERNEL_DEFCONFIG="quartix_defconfig"
+KERNEL_DEFCONFIG="gki_defconfig"
 if [ "$KVER" == "6.6" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
   ANYKERNEL_BRANCH="android15-6.6"
   KERNEL_BRANCH="android15-6.6-2025-01"
 elif [ "$KVER" == "6.1" ]; then
-  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android14-6.1"
+  KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-6.1"
   ANYKERNEL_BRANCH="android14-6.1"
-  KERNEL_BRANCH="android14-6.1-lts"
+  KERNEL_BRANCH="android14-6.1-lazygoogle"
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
   ANYKERNEL_BRANCH="android12-5.10"
@@ -56,6 +56,16 @@ cd $KSRC
 LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
+
+# --- TAMBAHKAN SCRIPT INJECT DISINI ---
+log "Injecting custom KSU & SuSFS configs from GitHub..."
+export KSU
+export KSU_SUSFS
+wget -qO inject.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/gki_defconfig.sh
+bash inject.sh
+rm inject.sh
+# --------------------------------------
+
 cd $WORKDIR
 
 # Set Kernel variant
@@ -64,6 +74,7 @@ case "$KSU" in
   "Next") VARIANT="KSUN" ;;
   "Biasa") VARIANT="KSU" ;;
   "Rissu") VARIANT="RKSU" ;;
+  "SukiSU") VARIANT="SUKSU" ;;
   "None") VARIANT="NKSU" ;;
 esac
 susfs_included && VARIANT+="+SuSFS"
@@ -120,8 +131,8 @@ cd $KSRC
 
 ## KernelSU setup
 if ksu_included; then
-  # Remove existing KernelSU drivers
-  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU; do
+  # Remove existing KernelSU drivers (Tambah SukiSU ke cleanup)
+  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU SukiSU; do
     if [ -d $KSU_PATH ]; then
       log "KernelSU driver found in $KSU_PATH, Removing..."
       KSU_DIR=$(dirname "$KSU_PATH")
@@ -138,10 +149,11 @@ if ksu_included; then
     "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
+    "SukiSU")
+      log "Installing SukiSU..."
+      curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s tmp-builtin
+      ;;
   esac
-  config --enable CONFIG_KSU
-  config --enable CONFIG_KPM
-  config --disable CONFIG_KSU_MANUAL_SU
 fi
 
 # SUSFS
@@ -175,7 +187,7 @@ if susfs_included; then
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
   # KernelSU-side
-  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ] || [ "$KSU" == "SukiSU" ]; then
     log "Applying kernelsu-side susfs patches.."
 
     if false; then
@@ -194,6 +206,8 @@ if susfs_included; then
       fi
     elif [ "$KSU" == "Biasa" ]; then
       cd KernelSU
+    elif [ "$KSU" == "SukiSU" ]; then
+      cd SukiSU
     fi
 
     if [ "$KSU" == "Next" ]; then
@@ -202,26 +216,23 @@ if susfs_included; then
       fi
     elif [ "$KSU" == "Biasa" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
+    elif [ "$KSU" == "SukiSU" ]; then
+      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
     fi
 
     if false; then
       if [ "$KSU" == "Next" ]; then
         log "Applying the susfs fix patches..."
-        # apply the fix patches
         for p in "$SUSFS_FIX_PATCHES"/*.patch; do
           patch -p1 --forward < $p
         done
-        # cleanup .orig / .rej
         find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
       fi
     fi
-    if ! [ "$KSU" == "Next" ]; then
+    if [ "$KSU" == "Biasa" ] || [ "$KSU" == "SukiSU" ]; then
       cd $OLDPWD
     fi
   fi
-  config --enable CONFIG_KSU_SUSFS
-else
-  config --disable CONFIG_KSU_SUSFS
 fi
 
 # Apply some kernelsu patches
@@ -233,24 +244,8 @@ fi
 
 # Manual Hooks
 if ksu_manual_hook; then
-  #  log "Applying manual hook patch"
-  #  if [ "$KSU" == "Rissu" ]; then
-  #    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.6.patch
-  #  else
-  #    patch -p1 --forward < $KERNEL_PATCHES/hooks/manual-hook-v1.4.patch
-  #    patch -p1 --forward < $KERNEL_PATCHES/hooks/reboot-hook.patch
-  #  fi
-  #  config --enable CONFIG_KSU_MANUAL_HOOK
-  #  config --disable CONFIG_KSU_KPROBES_HOOK
-  #  config --disable CONFIG_KSU_SYSCALL_HOOK
-  #  config --disable CONFIG_KSU_SUSFS_SUS_SU # Conflicts with manual hook
   : "DUMMY"
 fi
-
-# Enable KPM Supports for SukiSU
-# if [ $KSU == "Suki" ]; then
-#   config --enable CONFIG_KPM
-# fi
 
 # set localversion
 if [ $TODO == "kernel" ]; then
@@ -345,24 +340,6 @@ fi
 
 ## Post-compiling stuff
 cd $WORKDIR
-
-# Patch the kernel Image for KPM Supports
-#if [ $KSU == "Suki" ]; then
-#  tempdir=$(mktemp -d) && cd $tempdir
-#
-#  # Setup patching tool
-#  LATEST_SUKISU_PATCH=$(curl -s "https://api.github.com/repos/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/latest" | grep "browser_download_url" | grep "patch_linux" | cut -d '"' -f 4)
-#  curl -Ls "$LATEST_SUKISU_PATCH" -o patch_linux
-#  chmod a+x ./patch_linux
-#
-#  # Patch the kernel image
-#  cp $KERNEL_IMAGE ./Image
-#  sudo ./patch_linux
-#  mv oImage Image
-#  KERNEL_IMAGE=$(pwd)/Image
-#
-#  cd -
-#fi
 
 # Clone AnyKernel
 log "Cloning anykernel from $(simplify_gh_url "$ANYKERNEL_REPO")"
