@@ -187,7 +187,9 @@ if susfs_included; then
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
   # KernelSU-side
-  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ] || [ "$KSU" == "SukiSU" ]; then
+  # FIXED: Hanya patch Next dan Biasa. SukiSU tidak dipatch karena struktur kodenya berbeda
+  # dan menyebabkan error compile (#else without #if). Kernel-side patch sudah cukup.
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
     log "Applying kernelsu-side susfs patches.."
 
     if false; then
@@ -206,15 +208,6 @@ if susfs_included; then
       fi
     elif [ "$KSU" == "Biasa" ]; then
       cd KernelSU
-    elif [ "$KSU" == "SukiSU" ]; then
-      # FIXED: Cek direktori yang dibuat oleh setup.sh (biasanya 'KernelSU' untuk fork standar)
-      if [ -d "KernelSU" ]; then
-        cd KernelSU
-      elif [ -d "SukiSU" ]; then
-        cd SukiSU
-      else
-        log "WARNING: KSU directory not found. Skipping KSU-side patches."
-      fi
     fi
 
     if [ "$KSU" == "Next" ]; then
@@ -223,11 +216,6 @@ if susfs_included; then
       fi
     elif [ "$KSU" == "Biasa" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
-    elif [ "$KSU" == "SukiSU" ]; then
-      # Jalankan patch jika kita berada di dalam direktori KSU
-      if [ -f "$SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch" ]; then
-        patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
-      fi
     fi
 
     if false; then
@@ -239,13 +227,12 @@ if susfs_included; then
         find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
       fi
     fi
-    if [ "$KSU" == "Biasa" ] || [ "$KSU" == "SukiSU" ]; then
-      # FIXED: Hanya kembali jika posisi kita bukan di root kernel (KSRC)
-      # Ini mencegah error jika kita tidak berhasil masuk folder KSU tadi
-      if [[ "$(pwd)" != "$KSRC" ]]; then
-        cd $OLDPWD
-      fi
+    
+    if [ "$KSU" == "Biasa" ]; then
+      cd $OLDPWD
     fi
+  elif [ "$KSU" == "SukiSU" ]; then
+    log "Skipping KSU-side patches for SukiSU (Kernel-side patches applied)."
   fi
 fi
 
