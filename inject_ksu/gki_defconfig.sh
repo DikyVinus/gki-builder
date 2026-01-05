@@ -18,12 +18,20 @@ EOF
 
 # Logika pemilihan metode hook berdasarkan env KSU
 if [ "$KSU" == "SukiSU" ]; then
-  # PERBAIKAN: Untuk SukiSU, kita lewati settingan Manual Hook/SuSFS paksa.
-  # SukiSU memiliki sistem konfigurasi internal (Throne) yang lebih kompleks.
-  # Memaksa 'CONFIG_KSU_MANUAL_HOOK=n' di sini akan menyebabkan error linker (undefined symbol).
-  echo "🔧 Mode: SukiSU (Auto-Config Internal)"
+    # SUKISU SPECIAL HANDLING
+    if [ "$KSU_SUSFS" = "true" ]; then
+        echo "🔧 Mode: SukiSU + SuSFS Enabled"
+        cat >> $DEFCONFIG <<EOF
+# --- SuSFS Configuration for SukiSU ---
+CONFIG_KSU_SUSFS=y
+# Biarkan SukiSU mengatur detail hook & mount secara internal
+EOF
+    else
+        echo "🔧 Mode: SukiSU Standard (No SuSFS)"
+    fi
 
 elif [ "$KSU_SUSFS" = "true" ]; then
+  # LOGIC STANDARD UNTUK NEXT, BIASA, RISSU
   echo "🔧 Mode: SuSFS Hook Enabled"
   cat >> $DEFCONFIG <<EOF
 # --- SuSFS Configuration ---
@@ -49,6 +57,7 @@ elif [ "$KSU_SUSFS" = "true" ]; then
 EOF
 
 else
+  # LOGIC STANDARD TANPA SUSFS
   echo "🔧 Mode: Kprobes Hook Standard"
   cat >> $DEFCONFIG <<EOF
 # --- Kprobes Hook Method ---
