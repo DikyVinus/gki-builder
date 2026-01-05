@@ -140,6 +140,7 @@ if ksu_included; then
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
   esac
   config --enable CONFIG_KSU
+  config --enable CONFIG_KPM
   config --disable CONFIG_KSU_MANUAL_SU
 fi
 
