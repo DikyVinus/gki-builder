@@ -207,7 +207,14 @@ if susfs_included; then
     elif [ "$KSU" == "Biasa" ]; then
       cd KernelSU
     elif [ "$KSU" == "SukiSU" ]; then
-      cd SukiSU
+      # FIXED: Cek direktori yang dibuat oleh setup.sh (biasanya 'KernelSU' untuk fork standar)
+      if [ -d "KernelSU" ]; then
+        cd KernelSU
+      elif [ -d "SukiSU" ]; then
+        cd SukiSU
+      else
+        log "WARNING: KSU directory not found. Skipping KSU-side patches."
+      fi
     fi
 
     if [ "$KSU" == "Next" ]; then
@@ -217,7 +224,10 @@ if susfs_included; then
     elif [ "$KSU" == "Biasa" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
     elif [ "$KSU" == "SukiSU" ]; then
-      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
+      # Jalankan patch jika kita berada di dalam direktori KSU
+      if [ -f "$SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch" ]; then
+        patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
+      fi
     fi
 
     if false; then
@@ -230,7 +240,11 @@ if susfs_included; then
       fi
     fi
     if [ "$KSU" == "Biasa" ] || [ "$KSU" == "SukiSU" ]; then
-      cd $OLDPWD
+      # FIXED: Hanya kembali jika posisi kita bukan di root kernel (KSRC)
+      # Ini mencegah error jika kita tidak berhasil masuk folder KSU tadi
+      if [[ "$(pwd)" != "$KSRC" ]]; then
+        cd $OLDPWD
+      fi
     fi
   fi
 fi
