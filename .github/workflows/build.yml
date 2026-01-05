@@ -35,6 +35,7 @@ on:
           - "Next"
           - "Rissu"
           - "Biasa"
+          - "SukiSU"
 
       KSU_SUSFS:
         description: Include SUSFS?
