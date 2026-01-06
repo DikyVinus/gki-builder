@@ -272,7 +272,7 @@ if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j2
+    -j$(nproc --all)
     O=$OUTDIR
   )
 else
@@ -282,7 +282,7 @@ else
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j4
+    -j$(nproc --all)
     O=$OUTDIR
   )
 fi
@@ -306,28 +306,8 @@ EOF
 )
 
 ## Build GKI
-# --- ADD SWAP INSIDE BUILD SCRIPT ---
-log "Enabling swap to prevent OOM..."
-sudo fallocate -l 10G /swapfile || true
-sudo chmod 600 /swapfile || true
-sudo mkswap /swapfile || true
-sudo swapon /swapfile || true
-free -h
-# ---------------------------------------
-
 log "Generating config..."
 make ${MAKE_ARGS[@]} $KERNEL_DEFCONFIG
-
-# --- FIX LTO RAM ISSUE (EXIT 143) ---
-# Mematikan LTO untuk GKI 5.10 agar build tidak OOM
-if [ "$KVER" == "5.10" ]; then
-  log "❗ Disabling LTO for 5.10 to prevent OOM Kill..."
-  scripts/config --file $OUTDIR/.config --disable CONFIG_LTO
-  scripts/config --file $OUTDIR/.config --disable CONFIG_LTO_CLANG
-  # Kompilasi ulang config agar LTO hilang
-  make ${MAKE_ARGS[@]} olddefconfig
-fi
-# --------------------------------------
 
 if [ "$DEFCONFIG_TO_MERGE" ]; then
   log "Merging configs..."
