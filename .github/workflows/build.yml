@@ -76,17 +76,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Free disk space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 8192
-          swap-size-mb: 10240
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'true'
-
       - name: Determine Build Status
         run: |
           if [ "${{ toJson(github.event.inputs) }}" == "null" ]; then
@@ -141,6 +130,18 @@ jobs:
           sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio
           pip install lxml
 
+#     - name: Enable swap with high priority and swappiness
+#       run: |
+#         sudo swapoff -a
+#         sudo fallocate -l 12G /swapfile
+#         sudo chmod 600 /swapfile
+#         sudo mkswap /swapfile
+#         sudo swapon /swapfile --priority 100
+#         sudo sysctl vm.swappiness=100
+#         free -h
+#         echo
+#         swapon --show
+
       - name: Run Build Script
         env:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }} # telegram chat id
@@ -154,7 +155,7 @@ jobs:
           KVER: ${{ inputs.KERNEL_VERSION }}
         run: |
           export GIT_CLONE_PROTECTION_ACTIVE=false
-          chmod +x *.sh py/*.py || true
+          chmod +x *.sh py/*.py
           ./build.sh
 
       - name: Upload Artifacts (ZIP & IMG)
