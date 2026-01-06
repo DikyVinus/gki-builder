@@ -309,6 +309,17 @@ EOF
 log "Generating config..."
 make ${MAKE_ARGS[@]} $KERNEL_DEFCONFIG
 
+# --- FIX LTO RAM ISSUE (EXIT 143) ---
+# Mematikan LTO untuk GKI 5.10 agar build tidak OOM
+if [ "$KVER" == "5.10" ]; then
+  log "❗ Disabling LTO for 5.10 to prevent OOM Kill..."
+  scripts/config --file $OUTDIR/.config --disable CONFIG_LTO
+  scripts/config --file $OUTDIR/.config --disable CONFIG_LTO_CLANG
+  # Kompilasi ulang config agar LTO hilang
+  make ${MAKE_ARGS[@]} olddefconfig
+fi
+# --------------------------------------
+
 if [ "$DEFCONFIG_TO_MERGE" ]; then
   log "Merging configs..."
   if [ -f "scripts/kconfig/merge_config.sh" ]; then
