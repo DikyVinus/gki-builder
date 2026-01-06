@@ -130,17 +130,19 @@ jobs:
           sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio
           pip install lxml
 
-      - name: Enable swap with high priority and swappiness
+      - name: Enable swap
         run: |
           sudo swapoff -a
-          sudo fallocate -l 12G /swapfile
+          # Mengurangi ukuran swap menjadi 8G agar disk tidak penuh
+          sudo fallocate -l 8G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=8192
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
-          sudo swapon /swapfile --priority 100
+          sudo swapon /swapfile
+          # Izinkan overcommit memory agar LTO tidak langsung mati
+          sudo sysctl vm.overcommit_memory=1
           sudo sysctl vm.swappiness=100
           free -h
-          echo
-          swapon --show
+          df -h
 
       - name: Run Build Script
         env:
