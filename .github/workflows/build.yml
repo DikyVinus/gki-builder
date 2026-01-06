@@ -76,7 +76,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Free disk space & Setup Swap (10GB)
+      - name: Free disk space
         uses: easimon/maximize-build-space@master
         with:
           root-reserve-mb: 8192
@@ -86,12 +86,6 @@ jobs:
           remove-haskell: 'true'
           remove-codeql: 'true'
           remove-docker-images: 'true'
-
-      - name: Enable Memory Overcommit (Anti-Crash)
-        run: |
-          # Ini krusial agar LTO tidak langsung di-kill sistem meskipun RAM/Swap tinggal sedikit
-          sudo sysctl vm.overcommit_memory=1
-          echo "vm.overcommit_memory=1" | sudo tee -a /etc/sysctl.conf
 
       - name: Determine Build Status
         run: |
@@ -160,7 +154,7 @@ jobs:
           KVER: ${{ inputs.KERNEL_VERSION }}
         run: |
           export GIT_CLONE_PROTECTION_ACTIVE=false
-          chmod +x *.sh py/*.py
+          chmod +x *.sh py/*.py || true
           ./build.sh
 
       - name: Upload Artifacts (ZIP & IMG)
