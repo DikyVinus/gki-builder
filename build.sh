@@ -282,7 +282,7 @@ else
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j2
+    -j4
     O=$OUTDIR
   )
 fi
