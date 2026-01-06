@@ -272,7 +272,7 @@ if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j$(nproc --all)
+    -j2
     O=$OUTDIR
   )
 else
@@ -282,7 +282,7 @@ else
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j$(nproc --all)
+    -j2
     O=$OUTDIR
   )
 fi
