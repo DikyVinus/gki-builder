@@ -76,6 +76,23 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Free disk space & Setup Swap (10GB)
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 8192
+          swap-size-mb: 10240
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'true'
+
+      - name: Enable Memory Overcommit (Anti-Crash)
+        run: |
+          # Ini krusial agar LTO tidak langsung di-kill sistem meskipun RAM/Swap tinggal sedikit
+          sudo sysctl vm.overcommit_memory=1
+          echo "vm.overcommit_memory=1" | sudo tee -a /etc/sysctl.conf
+
       - name: Determine Build Status
         run: |
           if [ "${{ toJson(github.event.inputs) }}" == "null" ]; then
@@ -129,20 +146,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio
           pip install lxml
-
-      - name: Enable swap
-        run: |
-          sudo swapoff -a
-          # Mengurangi ukuran swap menjadi 8G agar disk tidak penuh
-          sudo fallocate -l 8G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=8192
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          # Izinkan overcommit memory agar LTO tidak langsung mati
-          sudo sysctl vm.overcommit_memory=1
-          sudo sysctl vm.swappiness=100
-          free -h
-          df -h
 
       - name: Run Build Script
         env:
