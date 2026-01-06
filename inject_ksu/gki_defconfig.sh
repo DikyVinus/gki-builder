@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Definisikan lokasi defconfig target
+# Define target defconfig location
 DEFCONFIG="arch/arm64/configs/gki_defconfig"
 
 echo "⚙️ Menambahkan konfigurasi KSU & SuSFS"
@@ -12,11 +12,11 @@ cat >> $DEFCONFIG <<EOF
 CONFIG_KSU=y
 CONFIG_KPM=y
 # Kprobes is a hard dependency for KSU-Next
-CONFIG_KPROBES=y
+CONFIG_KPROBES=yBase KSU Config & Dependencies
 CONFIG_KPROBE_EVENTS=y
 EOF
 
-# Logika pemilihan metode hook berdasarkan env KSU
+# Hook method selection logic based on KSU env
 if [ "$KSU" == "SukiSU" ]; then
     # SUKISU SPECIAL HANDLING
     if [ "$KSU_SUSFS" = "true" ]; then
@@ -31,7 +31,7 @@ EOF
     fi
 
 elif [ "$KSU_SUSFS" = "true" ]; then
-  # LOGIC STANDARD UNTUK NEXT, BIASA, RISSU
+  # LOGIC STANDARD FOR KSU NEXT, REGULAR, RISSU, RKSU
   echo "🔧 Mode: SuSFS Hook Enabled"
   cat >> $DEFCONFIG <<EOF
 # --- SuSFS Configuration ---
@@ -57,7 +57,7 @@ elif [ "$KSU_SUSFS" = "true" ]; then
 EOF
 
 else
-  # LOGIC STANDARD TANPA SUSFS
+  # Standard Logic Without Susfs kprobes mode
   echo "🔧 Mode: Kprobes Hook Standard"
   cat >> $DEFCONFIG <<EOF
 # --- Kprobes Hook Method ---
