@@ -53,6 +53,14 @@ on:
           - "true"
           - "false"
 
+      LAST_BUILD:
+        description: Is this the last build of the day?
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
       KERNEL_VERSION:
         description: Which kernel version do you want to build?
         default: ""
@@ -130,17 +138,17 @@ jobs:
           sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio
           pip install lxml
 
-#     - name: Enable swap with high priority and swappiness
-#       run: |
-#         sudo swapoff -a
-#         sudo fallocate -l 12G /swapfile
-#         sudo chmod 600 /swapfile
-#         sudo mkswap /swapfile
-#         sudo swapon /swapfile --priority 100
-#         sudo sysctl vm.swappiness=100
-#         free -h
-#         echo
-#         swapon --show
+      # Swap Logic dipindah ke build.sh (10G) agar lebih efisien
+      # Maka step swap di yml ini dinonaktifkan untuk menghindari duplikasi
+      # - name: Enable swap
+      #   run: |
+      #     sudo swapoff -a
+      #     sudo fallocate -l 8G /swapfile
+      #     sudo chmod 600 /swapfile
+      #     sudo mkswap /swapfile
+      #     sudo swapon /swapfile
+      #     sudo sysctl vm.swappiness=100
+      #     free -h
 
       - name: Run Build Script
         env:
