@@ -12,7 +12,7 @@ cat >> $DEFCONFIG <<EOF
 CONFIG_KSU=y
 CONFIG_KPM=y
 # Kprobes is a hard dependency for KSU-Next
-CONFIG_KPROBES=y
+CONFIG_KPROBES=yBase KSU Config & Dependencies
 CONFIG_KPROBE_EVENTS=y
 EOF
 
@@ -68,17 +68,5 @@ CONFIG_KSU_MANUAL_HOOK=n
 CONFIG_KSU_HAS_MANUAL_HOOK=n
 CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=n
 CONFIG_KSU_SYSCALL_HOOK=n
-EOF
-fi
-
-# --- FIX LTO RAM ISSUE (EXIT 143) UNTUK GKI 5.10 ---
-if [ "$KVER" == "5.10" ]; then
-    echo "❗ Disabling LTO for GKI 5.10 (Prevent OOM Kill)..."
-    cat >> $DEFCONFIG <<EOF
-# ===============================================
-# Force Disable LTO for 5.10
-CONFIG_LTO=n
-CONFIG_LTO_CLANG=n
-CONFIG_THINLTO=n
 EOF
 fi
