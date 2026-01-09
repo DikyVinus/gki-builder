@@ -14,7 +14,7 @@ USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-KERNEL_DEFCONFIG="gki_defconfig"
+KERNEL_DEFCONFIG="quartix_defconfig"
 if [ "$KVER" == "6.6" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
   ANYKERNEL_BRANCH="android15-6.6"
@@ -26,7 +26,7 @@ elif [ "$KVER" == "6.1" ]; then
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="bengris32"
+  KERNEL_BRANCH="master-new"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
@@ -64,7 +64,6 @@ case "$KSU" in
   "Next") VARIANT="KSUN" ;;
   "Biasa") VARIANT="KSU" ;;
   "Rissu") VARIANT="RKSU" ;;
-  "WildKSU") VARIANT="WKSU" ;;
   "None") VARIANT="NKSU" ;;
 esac
 susfs_included && VARIANT+="+SuSFS"
@@ -139,7 +138,6 @@ if ksu_included; then
     "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
-    "WildKSU") curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/refs/heads/wild/kernel/setup.sh" | bash -s wild ;;
   esac
   config --enable CONFIG_KSU
   config --enable CONFIG_KPM
@@ -177,7 +175,7 @@ if susfs_included; then
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
   # KernelSU-side
-  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ] || [ "$KSU" == "WildKSU" ]; then
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
     log "Applying kernelsu-side susfs patches.."
 
     if false; then
@@ -196,8 +194,6 @@ if susfs_included; then
       fi
     elif [ "$KSU" == "Biasa" ]; then
       cd KernelSU
-    elif [ "$KSU" == "WildKSU" ]; then
-      cd KernelSU
     fi
 
     if [ "$KSU" == "Next" ]; then
@@ -205,8 +201,6 @@ if susfs_included; then
         patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
       fi
     elif [ "$KSU" == "Biasa" ]; then
-      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
-    elif [ "$KSU" == "WildKSU" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
     fi
 
