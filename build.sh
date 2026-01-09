@@ -273,13 +273,20 @@ export KBUILD_BUILD_USER="$USER"
 export KBUILD_BUILD_HOST="$HOST"
 export KBUILD_BUILD_TIMESTAMP=$(date)
 export KCFLAGS="-w"
+
+# --- FIX: Paksa linker single-thread untuk mencegah OOM (Error 143) saat LTO ---
+export KBUILD_LDFLAGS="--threads=1"
+# ------------------------------------------------------------------------------
+
 if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
   MAKE_ARGS=(
     LLVM=1
+    LLVM_IAS=1
     ARCH=arm64
+    LD=ld.lld
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j2
+    -j1
     O=$OUTDIR
   )
 else
@@ -287,9 +294,10 @@ else
     LLVM=1
     LLVM_IAS=1
     ARCH=arm64
+    LD=ld.lld
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j2
+    -j1
     O=$OUTDIR
   )
 fi
