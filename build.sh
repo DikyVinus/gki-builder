@@ -177,7 +177,7 @@ if susfs_included; then
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
   # KernelSU-side
-  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ] || [ "$KSU" == "WildKSU" ]; then
     log "Applying kernelsu-side susfs patches.."
 
     if false; then
@@ -196,6 +196,8 @@ if susfs_included; then
       fi
     elif [ "$KSU" == "Biasa" ]; then
       cd KernelSU
+    elif [ "$KSU" == "WildKSU" ]; then
+      cd KernelSU
     fi
 
     if [ "$KSU" == "Next" ]; then
@@ -203,6 +205,8 @@ if susfs_included; then
         patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
       fi
     elif [ "$KSU" == "Biasa" ]; then
+      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
+    elif [ "$KSU" == "WildKSU" ]; then
       patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
     fi
 
