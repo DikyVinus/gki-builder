@@ -132,7 +132,7 @@ jobs:
           pip install lxml
 
       - name: Enable swap with high priority and swappiness
-       run: |
+        run: |
           sudo swapoff -a
           sudo fallocate -l 12G /swapfile
           sudo chmod 600 /swapfile
