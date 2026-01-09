@@ -14,7 +14,7 @@ USER="eraselk"
 HOST="gacorprjkt"
 TIMEZONE="Asia/Makassar"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-KERNEL_DEFCONFIG="gki_defconfig"
+KERNEL_DEFCONFIG="qx_defconfig"
 if [ "$KVER" == "6.6" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
   ANYKERNEL_BRANCH="android15-6.6"
