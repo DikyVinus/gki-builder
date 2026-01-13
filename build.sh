@@ -250,6 +250,19 @@ if [ "$KSU" == "Rissu" ]; then
   cd "$OLDPWD"
 fi
 
+# --- PERBAIKAN FIXED SCRIPT DISINI ---
+# Diletakkan setelah patching KSU/SuSFS, sebelum build config
+echo "🛠️ Fixing undefined KSU symbols (ksu_init_rc_hook, ksu_handle_sys_newfstatat)..."
+if [ -f fs/read_write.c ]; then
+  sed -i '/ksu_init_rc_hook/d' fs/read_write.c
+  echo "✅ Removed ksu_init_rc_hook from fs/read_write.c"
+fi
+if [ -f fs/stat.c ]; then
+  sed -i '/ksu_handle_sys_newfstatat/d' fs/stat.c
+  echo "✅ Removed ksu_handle_sys_newfstatat from fs/stat.c"
+fi
+# -------------------------------------
+
 # Manual Hooks
 if ksu_manual_hook; then
   : "DUMMY"
