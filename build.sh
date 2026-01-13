@@ -26,7 +26,8 @@ elif [ "$KVER" == "6.1" ]; then
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="master-new"
+  # FIXED: Mengubah branch master-new menjadi master karena error "Remote branch master-new not found"
+  KERNEL_BRANCH="master"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
@@ -243,15 +244,9 @@ if susfs_included; then
   fi
 fi
 
-# Apply some kernelsu patches
-if [ "$KSU" == "Rissu" ]; then
-  cd KernelSU
-  patch -p1 < "$KERNEL_PATCHES"/ksu/rksu-add-mambosu-manager-support.patch
-  cd "$OLDPWD"
-fi
-
 # --- PERBAIKAN FIXED SCRIPT DISINI ---
-# Diletakkan setelah patching KSU/SuSFS, sebelum build config
+# Diletakkan setelah patching KSU/SuSFS selesai, sebelum patch tambahan Rissu
+# Posisi ini aman karena kita masih berada di dalam cd $KSRC
 echo "🛠️ Fixing undefined KSU symbols (ksu_init_rc_hook, ksu_handle_sys_newfstatat)..."
 if [ -f fs/read_write.c ]; then
   sed -i '/ksu_init_rc_hook/d' fs/read_write.c
@@ -262,6 +257,13 @@ if [ -f fs/stat.c ]; then
   echo "✅ Removed ksu_handle_sys_newfstatat from fs/stat.c"
 fi
 # -------------------------------------
+
+# Apply some kernelsu patches
+if [ "$KSU" == "Rissu" ]; then
+  cd KernelSU
+  patch -p1 < "$KERNEL_PATCHES"/ksu/rksu-add-mambosu-manager-support.patch
+  cd "$OLDPWD"
+fi
 
 # Manual Hooks
 if ksu_manual_hook; then
