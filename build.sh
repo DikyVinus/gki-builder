@@ -22,7 +22,7 @@ if [ "$KVER" == "6.6" ]; then
 elif [ "$KVER" == "6.1" ]; then
   KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-6.1"
   ANYKERNEL_BRANCH="android14-6.1"
-  KERNEL_BRANCH="android14-6.1-lazygoogle"
+  KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
   ANYKERNEL_BRANCH="android12-5.10"
