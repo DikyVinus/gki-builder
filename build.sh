@@ -244,20 +244,6 @@ if susfs_included; then
   fi
 fi
 
-# --- PERBAIKAN FIXED SCRIPT DISINI ---
-# Diletakkan setelah patching KSU/SuSFS selesai, sebelum patch tambahan Rissu
-# Posisi ini aman karena kita masih berada di dalam cd $KSRC
-echo "🛠️ Fixing undefined KSU symbols (ksu_init_rc_hook, ksu_handle_sys_newfstatat)..."
-if [ -f fs/read_write.c ]; then
-  sed -i '/ksu_init_rc_hook/d' fs/read_write.c
-  echo "✅ Removed ksu_init_rc_hook from fs/read_write.c"
-fi
-if [ -f fs/stat.c ]; then
-  sed -i '/ksu_handle_sys_newfstatat/d' fs/stat.c
-  echo "✅ Removed ksu_handle_sys_newfstatat from fs/stat.c"
-fi
-# -------------------------------------
-
 # Apply some kernelsu patches
 if [ "$KSU" == "Rissu" ]; then
   cd KernelSU
