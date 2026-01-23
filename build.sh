@@ -9,7 +9,7 @@ elif [ "$KVER" == "5.10" ]; then
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
-KERNEL_NAME="BX"
+KERNEL_NAME="BX-Enfiled"
 USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
