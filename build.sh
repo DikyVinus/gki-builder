@@ -233,6 +233,19 @@ if susfs_included; then
         find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
       fi
     fi
+
+    # --- TAMBAHKAN FIXED CONFLICT UNAME SYMBOL ERROR DISINI ---
+    # Hanya untuk KernelSU Next, setelah patching SusSFS
+    if [ "$KSU" == "Next" ]; then
+      log "🛠️ Applying fix for undefined SUSFS symbols (Next)..."
+      # Disable the SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+      # This fixes the linker error caused by missing functions in the current SUSFS patch
+      if [ -f "drivers/kernelsu/supercalls.c" ]; then
+         sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
+         log "✅ SUSFS symbol fix applied for KernelSU-Next"
+      fi
+    fi
+    # -----------------------------------------------------------
     
     if [ "$KSU" == "Biasa" ]; then
       cd $OLDPWD
