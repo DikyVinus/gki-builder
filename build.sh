@@ -9,7 +9,7 @@ elif [ "$KVER" == "5.10" ]; then
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
-KERNEL_NAME="BX-Enfield"
+KERNEL_NAME="BX-11"
 USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
@@ -75,7 +75,7 @@ case "$KSU" in
   "Next") VARIANT="KSUN" ;;
   "Biasa") VARIANT="KSU" ;;
   "Rissu") VARIANT="RKSU" ;;
-  "SukiSU") VARIANT="SUKSU" ;;
+  "ReSukiSU") VARIANT="ReSUKiSU" ;;
   "Wild") VARIANT="WKSU" ;;
   "None") VARIANT="NKSU" ;;
 esac
@@ -152,8 +152,8 @@ if ksu_included; then
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
     "SukiSU")
-      log "Installing SukiSU..."
-      curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s tmp-builtin
+      log "Installing ReSukiSU..."
+      curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s builtin
       ;;
     "Wild")
       log "Installing Wild KSU..."
@@ -233,19 +233,6 @@ if susfs_included; then
         find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
       fi
     fi
-
-    # --- TAMBAHKAN FIXED CONFLICT UNAME SYMBOL ERROR DISINI ---
-    # Hanya untuk KernelSU Next, setelah patching SusSFS
-    if [ "$KSU" == "Next" ]; then
-      log "🛠️ Applying fix for undefined SUSFS symbols (Next)..."
-      # Disable the SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
-      # This fixes the linker error caused by missing functions in the current SUSFS patch
-      if [ -f "drivers/kernelsu/supercalls.c" ]; then
-         sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
-         log "✅ SUSFS symbol fix applied for KernelSU-Next"
-      fi
-    fi
-    # -----------------------------------------------------------
     
     if [ "$KSU" == "Biasa" ]; then
       cd $OLDPWD
