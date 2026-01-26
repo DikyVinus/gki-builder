@@ -75,7 +75,7 @@ case "$KSU" in
   "Next") VARIANT="KSUN" ;;
   "Biasa") VARIANT="KSU" ;;
   "Rissu") VARIANT="RKSU" ;;
-  "ReSukiSU") VARIANT="ReSUKiSU" ;;
+  "ReSukiSU") VARIANT="ReSukiSU" ;;
   "Wild") VARIANT="WKSU" ;;
   "None") VARIANT="NKSU" ;;
 esac
@@ -133,8 +133,8 @@ cd $KSRC
 
 ## KernelSU setup
 if ksu_included; then
-  # Remove existing KernelSU drivers (Update: Ganti SukiSU dengan ReSukiSU)
-  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU ReSukiSU Wild_KSU; do
+  # Remove existing KernelSU drivers (Tambah SukiSU & Wild KSU ke cleanup)
+  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU SukiSU Wild_KSU; do
     if [ -d $KSU_PATH ]; then
       log "KernelSU driver found in $KSU_PATH, Removing..."
       KSU_DIR=$(dirname "$KSU_PATH")
