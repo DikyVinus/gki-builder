@@ -9,7 +9,7 @@ elif [ "$KVER" == "5.10" ]; then
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
-KERNEL_NAME="BX-11"
+KERNEL_NAME="Enfiled-Kernel"
 USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
@@ -75,7 +75,7 @@ case "$KSU" in
   "Next") VARIANT="KSUN" ;;
   "Biasa") VARIANT="KSU" ;;
   "Rissu") VARIANT="RKSU" ;;
-  "ReSukiSU") VARIANT="ReSukiSU" ;;
+  "SukiSU") VARIANT="SukiSU" ;;
   "Wild") VARIANT="WKSU" ;;
   "None") VARIANT="NKSU" ;;
 esac
@@ -151,9 +151,9 @@ if ksu_included; then
     "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
-    "ReSukiSU")
-      log "Installing ReSukiSU..."
-      curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s builtin
+    "SukiSU")
+      log "Installing SukiSU..."
+      curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/refs/heads/builtin/kernel/setup.sh" | bash -s builtin
       ;;
     "Wild")
       log "Installing Wild KSU..."
@@ -193,7 +193,7 @@ if susfs_included; then
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
 
   # KernelSU-side
-  # FIXED: Hanya patch Next dan Biasa. ReSukiSU & Wild KSU tidak dipatch karena struktur kodenya berbeda
+  # FIXED: Hanya patch Next dan Biasa. SukiSU & Wild KSU tidak dipatch karena struktur kodenya berbeda
   # dan menyebabkan error compile (#else without #if). Kernel-side patch sudah cukup.
   if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
     log "Applying kernelsu-side susfs patches.."
@@ -237,8 +237,8 @@ if susfs_included; then
     if [ "$KSU" == "Biasa" ]; then
       cd $OLDPWD
     fi
-  elif [ "$KSU" == "ReSukiSU" ]; then
-    log "Skipping KSU-side patches for ReSukiSU (Kernel-side patches applied)."
+  elif [ "$KSU" == "SukiSU" ]; then
+    log "Skipping KSU-side patches for SukiSU (Kernel-side patches applied)."
   elif [ "$KSU" == "Wild" ]; then
     log "Skipping KSU-side patches for Wild KSU (Kernel-side patches applied)."
   fi
