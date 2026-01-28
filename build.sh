@@ -58,7 +58,14 @@ LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
 
-# --- TAMBAHKAN SCRIPT INJECT DISINI ---
+# --- PATCH 500HZ (DIPASANG DI AWAL) ---
+log "Applying 500Hz patch..."
+wget -qO Inject_500hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_500hz.sh
+bash Inject_500hz.sh
+rm Inject_500hz.sh
+# --------------------------------------
+
+# --- TAMBAHKAN SCRIPT INJECT KSU ---
 log "Injecting custom KSU & SuSFS configs from GitHub..."
 export KSU
 export KSU_SUSFS
@@ -157,7 +164,7 @@ if ksu_included; then
       ;;
     "Wild")
       log "Installing Wild KSU..."
-      curl -LSs "https://raw.githubusercontent.com/WildKernels/Wild_KSU/wild/kernel/setup.sh" | bash -s wild
+      curl -LSs "https://raw.githubusercontent.com/Kingfinik98/Wild_KSU/refs/heads/stable/kernel/setup.sh" | bash -s stable
       ;;
   esac
 fi
