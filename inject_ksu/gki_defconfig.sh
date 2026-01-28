@@ -12,7 +12,7 @@ cat >> $DEFCONFIG <<EOF
 CONFIG_KSU=y
 CONFIG_KPM=y
 # Kprobes is a hard dependency for KSU-Next
-CONFIG_KPROBES=yBase KSU Config & Dependencies
+CONFIG_KPROBES=y
 CONFIG_KPROBE_EVENTS=y
 EOF
 
@@ -62,11 +62,21 @@ else
   cat >> $DEFCONFIG <<EOF
 # --- Kprobes Hook Method ---
 # Disable SuSFS and Manual Hook
-CONFIG_KSU_SUSFS=n
-CONFIG_KSU_SUSFS_SUS_SU=n
-CONFIG_KSU_MANUAL_HOOK=n
-CONFIG_KSU_HAS_MANUAL_HOOK=n
-CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=n
-CONFIG_KSU_SYSCALL_HOOK=n
+    CONFIG_KSU_SUSFS=n
+    CONFIG_KSU_SUSFS_SUS_SU=n
+    CONFIG_KSU_MANUAL_HOOK=n
+    CONFIG_KSU_HAS_MANUAL_HOOK=n
+    CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=n
+    CONFIG_KSU_SYSCALL_HOOK=n
 EOF
 fi
+
+# --- Tambahan Universal Performance Tuning ---
+echo "⚙️ Menambahkan Universal Performance Tuning"
+cat >> $DEFCONFIG <<EOF
+# --- Universal Performance Tuning ---
+CONFIG_HZ=500
+CONFIG_HZ_500=y
+CONFIG_CPU_FREQ=y
+CONFIG_HIGH_RES_TIMERS=y
+EOF
