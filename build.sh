@@ -5,12 +5,12 @@ WORKDIR="$(pwd)"
 if [ "$KVER" == "6.6" ]; then
   RELEASE="v0.3"
 elif [ "$KVER" == "5.10" ]; then
-  RELEASE="v0.3"
+  RELEASE="v0.2"
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
 KERNEL_NAME="Enfiled-Quix"
-USER="Dev-BoltX"
+USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
@@ -24,22 +24,22 @@ elif [ "$KVER" == "6.1" ]; then
   ANYKERNEL_BRANCH="android14-6.1"
   KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
-  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
+  KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-5.10.git"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="master"
+  # FIXED: staging
+  KERNEL_BRANCH="android12-5.10-staging"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
-#CLANG_URL="$(./clang.sh slim)"
-CLANG_URL="https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/archive/refs/heads/lineage-20.0.tar.gz"
+CLANG_URL="$(./clang.sh slim)"
 CLANG_BRANCH=""
 AK3_ZIP_NAME="AK3-$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
 OUTDIR="$WORKDIR/out"
 KSRC="$WORKDIR/ksrc"
 KERNEL_PATCHES="$WORKDIR/kernel-patches"
 
- Handle error
+# Handle error
 exec > >(tee $WORKDIR/build.log) 2>&1
 trap 'error "Failed at line $LINENO [$BASH_COMMAND]"' ERR
 
@@ -73,13 +73,19 @@ wget -qO inject.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/ref
 bash inject.sh
 rm inject.sh
 # --------------------------------------
+
 cd $WORKDIR
 
 # Set Kernel variant
 log "Setting Kernel variant..."
 case "$KSU" in
-  "yes") VARIANT="KSU" ;;
-  "no") VARIANT="VNL" ;;
+  "Next") VARIANT="KSUN" ;;
+  "All") VARIANT="KSU-ALL" ;; # Tipe Baru: KernelSU Next Support All Manager
+  "Biasa") VARIANT="KSU" ;;
+  "Rissu") VARIANT="RKSU" ;;
+  "SukiSU") VARIANT="SukiSU" ;;
+  "Wild") VARIANT="WKSU" ;;
+  "None") VARIANT="NKSU" ;;
 esac
 susfs_included && VARIANT+="+SuSFS"
 
@@ -135,8 +141,8 @@ cd $KSRC
 
 ## KernelSU setup
 if ksu_included; then
-  # Remove existing KernelSU drivers
-  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU KernelSU-Next; do
+  # Remove existing KernelSU drivers (Tambah SukiSU, Wild KSU & KernelSU-Next ke cleanup)
+  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU KernelSU-Next SukiSU Wild_KSU; do
     if [ -d $KSU_PATH ]; then
       log "KernelSU driver found in $KSU_PATH, Removing..."
       KSU_DIR=$(dirname "$KSU_PATH")
@@ -148,12 +154,37 @@ if ksu_included; then
     fi
   done
 
-  install_ksu 'pershoot/KernelSU-Next' 'dev-susfs'
-  config --enable CONFIG_KSU
+  # Install kernelsu
+  case "$KSU" in
+    "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
+    "All")
+      # Tipe Baru: Install KernelSU-Next dengan patch All Manager Support
+      install_ksu 'pershoot/KernelSU-Next' 'dev-susfs'
+      config --enable CONFIG_KSU
+      cd KernelSU-Next
+      patch -p1 < $KERNEL_PATCHES/ksu/ksun-add-more-managers-support.patch
+      cd $OLDPWD
+      ;;
+    "Biasa") install_ksu tiann/KernelSU main ;;
+    "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
+    "SukiSU")
+      log "Installing SukiSU..."
+      curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/refs/heads/builtin/kernel/setup.sh" | bash -s builtin
+      ;;
+    "Wild")
+      log "Installing Wild KSU..."
+      curl -LSs "https://raw.githubusercontent.com/Kingfinik98/Wild_KSU/refs/heads/stable/kernel/setup.sh" | bash -s stable
+      ;;
+  esac
 
-  cd KernelSU-Next
-  patch -p1 < $KERNEL_PATCHES/ksu/ksun-add-more-managers-support.patch
-  cd $OLDPWD
+  # Fix SUSFS Uname Symbol Error for KernelSU Next
+  if [ "$KSU" == "Next" ]; then
+    log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
+    # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+    # This fixes the linker error caused by missing functions in the current SUSFS patch
+    sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
+    log "SUSFS symbol fix applied for KernelSU-Next."
+  fi
 fi
 
 # SUSFS
@@ -173,15 +204,15 @@ if susfs_included; then
   cp -R $SUSFS_PATCHES/fs/* ./fs
   cp -R $SUSFS_PATCHES/include/* ./include
   patch -p1 < $SUSFS_PATCHES/50_add_susfs_in_${SUSFS_BRANCH}.patch || true
-  if [ $LINUX_VERSION_CODE -eq 6630 ]; then
+  if [ $(echo "$LINUX_VERSION_CODE" | head -c4) -eq 6630 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/namespace.c_fix.patch
     patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix.patch
-  elif [ $LINUX_VERSION_CODE -eq 6658 ]; then
+  elif [ $(echo "$LINUX_VERSION_CODE" | head -c4) -eq 6658 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix-k6.6.58.patch
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/fs_proc_base.c-fix-k6.1.patch
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c3) -eq 510 ]; then
-    patch -p1 <$KERNEL_PATCHES/susfs/pershoot-susfs-k5.10.patch
+    patch -p1 < $KERNEL_PATCHES/susfs/pershoot-susfs-k5.10.patch
   fi
   if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/fix-statfs-crc-mismatch-susfs.patch
@@ -190,6 +221,18 @@ if susfs_included; then
   config --enable CONFIG_KSU_SUSFS
 else
   config --disable CONFIG_KSU_SUSFS
+fi
+
+# Apply some kernelsu patches
+if [ "$KSU" == "Rissu" ]; then
+  cd KernelSU
+  patch -p1 < "$KERNEL_PATCHES"/ksu/rksu-add-mambosu-manager-support.patch
+  cd "$OLDPWD"
+fi
+
+# Manual Hooks
+if ksu_manual_hook; then
+  : "DUMMY"
 fi
 
 # set localversion
@@ -216,7 +259,7 @@ if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j$(nproc --all)
+    -j2
     O=$OUTDIR
   )
 else
@@ -226,7 +269,7 @@ else
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j$(nproc --all)
+    -j2
     O=$OUTDIR
   )
 fi
