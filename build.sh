@@ -284,11 +284,11 @@ fi
 
 text=$(
   cat << EOF
-🐧 Linux Version: $LINUX_VERSION
-📅 Build Date: $KBUILD_BUILD_TIMESTAMP
-📛 KernelSU: ${KSU}
-ඞ SuSFS: $(susfs_included && echo "$SUSFS_VERSION" || echo "None")
-🔰 Compiler: $COMPILER_STRING
+🐧 *Linux Version*: $LINUX_VERSION
+📅 *Build Date*: $KBUILD_BUILD_TIMESTAMP
+📛 *KernelSU*: ${KSU}
+ඞ *SuSFS*: $(susfs_included && echo "$SUSFS_VERSION" || echo "None")
+🔰 *Compiler*: $COMPILER_STRING
 EOF
 )
 
@@ -356,11 +356,11 @@ cp $KERNEL_IMAGE .
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
-# --- FIX ARTIFACTS: Selalu siapkan artifacts agar bisa di download di GitHub Action ---
+# --- FIX ARTIFACTS: Base logic ---
 # Set BASE_NAME agar nama artifact di GA tidak error/kosong
 echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
 
-# Selalu pindahkan zip ke folder artifacts (BETA maupun RELEASE)
+# Selalu pindahkan zip ke folder artifacts agar bisa di-upload GA (BETA & RELEASE)
 mkdir -p $WORKDIR/artifacts
 mv $WORKDIR/*.zip $WORKDIR/artifacts
 # ---------------------------------------------------------------------------------------
@@ -378,10 +378,8 @@ if [ "$STATUS" == "BETA" ]; then
   upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
   upload_file "$WORKDIR/build.log"
 else
-  # --- FIX: UPLOAD ZIP KE TELEGRAM UNTUK RELEASE BESERTA INFO VERSI ---
-  upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
-  # Jika ingin upload log juga untuk release, tambahkan baris di bawah:
-  # upload_file "$WORKDIR/build.log"
+  # --- FIX: Menggunakan send_msg  untuk RELEASE (Anti Error) ---
+  send_msg "✅ Build Succeeded for $VARIANT variant."
 fi
 
 exit 0
