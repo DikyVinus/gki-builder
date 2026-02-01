@@ -12,7 +12,7 @@ fi
 KERNEL_NAME="Enfiled-Quix"
 USER="Dev-BoltX"
 HOST="BoltX"
-TIMEZONE="Asia/jakarta"
+TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 KERNEL_DEFCONFIG="gki_defconfig"
 if [ "$KVER" == "6.6" ]; then
