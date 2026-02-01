@@ -167,6 +167,15 @@ if ksu_included; then
       curl -LSs "https://raw.githubusercontent.com/Kingfinik98/Wild_KSU/refs/heads/stable/kernel/setup.sh" | bash -s stable
       ;;
   esac
+
+  # Fix SUSFS Uname Symbol Error for KernelSU Next
+  if [ "$KSU" == "Next" ]; then
+    log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
+    # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+    # This fixes the linker error caused by missing functions in the current SUSFS patch
+    sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
+    log "SUSFS symbol fix applied for KernelSU-Next."
+  fi
 fi
 
 # SUSFS
