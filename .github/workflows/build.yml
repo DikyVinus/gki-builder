@@ -13,12 +13,8 @@ on:
         type: string
       LAST_BUILD:
         type: string
-        default: "false"
       KERNEL_VERSION:
         type: string
-      BUILD_STATUS:
-        type: string
-        default: "RELEASE"
 
   workflow_dispatch:
     inputs:
@@ -30,18 +26,20 @@ on:
           - "kernel"
           - "defconfig"
 
+      # --- FIXED ---
       KSU:
-        description: KernelSU variant
+        description: Pilih Varian KernelSU
         default: "Next"
         type: choice
         options:
           - "None"
           - "Next"
           - "All_Manager"
-          - "Rissu"
           - "Biasa"
+          - "Rissu"
           - "SukiSU"
           - "Wild"
+      # ----------------------------------------------------
 
       KSU_SUSFS:
         description: Include SUSFS?
@@ -59,14 +57,6 @@ on:
           - "true"
           - "false"
 
-      LAST_BUILD: # DITAMBAHKAN: Agar sinkron dengan build.sh untuk create info.txt
-        description: Is Last Build?
-        default: "false"
-        type: choice
-        options:
-          - "true"
-          - "false"
-
       KERNEL_VERSION:
         description: Which kernel version do you want to build?
         default: "6.6"
@@ -75,14 +65,6 @@ on:
           - "6.6"
           - "6.1"
           - "5.10"
-
-      BUILD_STATUS:
-        description: Tipe Build
-        default: "BETA"
-        type: choice
-        options:
-          - "BETA"
-          - "RELEASE"
 
 env:
   MAN_DISABLE: true
@@ -100,24 +82,19 @@ jobs:
 
       - name: Determine Build Status
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "STATUS=${{ inputs.BUILD_STATUS }}" >> $GITHUB_ENV
-            echo "TRIGGER=workflow_dispatch" >> $GITHUB_ENV
-          else
-            # Jika dipanggil oleh workflow lain, gunakan input BUILD_STATUS atau default RELEASE
-            if [ -z "${{ inputs.BUILD_STATUS }}" ]; then
-               echo "STATUS=RELEASE" >> $GITHUB_ENV
-            else
-               echo "STATUS=${{ inputs.BUILD_STATUS }}" >> $GITHUB_ENV
-            fi
+          if [ "${{ toJson(github.event.inputs) }}" == "null" ]; then
+            echo "STATUS=RELEASE" >> $GITHUB_ENV
             echo "TRIGGER=workflow_call" >> $GITHUB_ENV
+          else
+            echo "STATUS=BETA" >> $GITHUB_ENV
+            echo "TRIGGER=workflow_dispatch" >> $GITHUB_ENV
           fi
 
       - name: Validate Inputs and Secrets
         env:
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }} # telegram chat id
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }} # telegram bot token
+          GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
@@ -128,22 +105,26 @@ jobs:
           }
 
           ret=0
+          # Check Secrets
           if [[ -z "$TG_CHAT_ID" ]]; then
-            _error "Missing TG_CHAT_ID secret"
+            _error "Missing TG_CHAT_ID secret (Telegram Chat ID)"
           fi
           if [[ -z "$TG_BOT_TOKEN" ]]; then
-            _error "Missing TG_BOT_TOKEN secret"
+            _error "Missing TG_BOT_TOKEN secret (Telegram Bot Token)"
           fi
           if [[ -z "$GH_TOKEN" ]]; then
-            _error "Missing GH_TOKEN secret"
+            _error "Missing GH_TOKEN secret (GitHub PAT)"
           fi
 
+          # --- FIX VALIDASI: SESUAIKAN DENGAN INPUT "None" ---
+          # KernelSU
           if [[ $KSU == "None" && $KSU_SUSFS == "true" ]]; then
-              _error "Cannot use SuSFS without KernelSU"
+              _error "Cannot use SuSFS without KernelSU (Pilih varian KSU selain None)"
           fi
           if [[ $KSU == "None" && $KSU_MANUAL_HOOK == "true" ]]; then
-            _error "Cannot use KSU Manual Hooks without KernelSU!"
+            _error "Cannot use KSU Manual Hooks without KernelSU! (Pilih varian KSU selain None)"
           fi
+          # ----------------------------------------------
 
           if [[ $ret -gt 0 ]]; then
             exit $ret
@@ -152,36 +133,44 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio
+          sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio wget
           pip install lxml
+
+#     - name: Enable swap with high priority and swappiness
+#       run: |
+#         sudo swapoff -a
+#         sudo fallocate -l 12G /swapfile
+#         sudo chmod 600 /swapfile
+#         sudo mkswap /swapfile
+#         sudo swapon /swapfile --priority 100
+#         sudo sysctl vm.swappiness=100
+#         free -h
+#         echo
+#         swapon --show
 
       - name: Run Build Script
         env:
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }} # telegram chat id
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }} # telegram bot token
+          GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
           LAST_BUILD: ${{ inputs.LAST_BUILD }}
           TODO: ${{ inputs.TODO }}
           KVER: ${{ inputs.KERNEL_VERSION }}
-          STATUS: ${{ env.STATUS }}
         run: |
           export GIT_CLONE_PROTECTION_ACTIVE=false
           chmod +x *.sh py/*.py
           ./build.sh
 
-      - name: Upload Artifacts (ZIP & IMG)
+      - name: Upload Artifacts (ZIP)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BASE_NAME }}-${{ github.run_number }}
-          path: |
-            artifacts/*.zip
-            artifacts/*.img
+          path: artifacts/*.zip
 
       - name: Upload Artifacts (Info File)
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: info-${{ github.run_number }}
