@@ -177,13 +177,26 @@ if ksu_included; then
       ;;
   esac
 
-  # Fix SUSFS Uname Symbol Error for KernelSU Next
-  if [ "$KSU" == "Next" ]; then
-    log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
-    # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
-    # This fixes the linker error caused by missing functions in the current SUSFS patch
+  # Fix SUSFS Uname Symbol Error for KernelSU Next & All
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "All" ]; then
+    log "Applying fix for undefined SUSFS symbols (KernelSU-Next/All)..."
+    
+    # Matikan blok #ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME agar tidak memanggil symbol yang tidak ada
     sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
-    log "SUSFS symbol fix applied for KernelSU-Next."
+    
+    # Fix khusus untuk error log yang muncul: undefined symbol susfs_uname_is_active
+    # Kita ganti pemanggilan fungsinya dengan 0 (false) agar kondisi if tidak jalan
+    if grep -q "susfs_uname_is_active" drivers/kernelsu/supercalls.c; then
+       sed -i 's/susfs_uname_is_active()/0 \/\* disabled \*\//g' drivers/kernelsu/supercalls.c
+    fi
+    
+    # Fix khusus untuk error log: undefined symbol susfs_set_uname_from_kernel
+    # Kita komentari barisnya agar tidak dipanggil
+    if grep -q "susfs_set_uname_from_kernel" drivers/kernelsu/supercalls.c; then
+       sed -i 's/susfs_set_uname_from_kernel(/\/\/ susfs_set_uname_from_kernel(/g' drivers/kernelsu/supercalls.c
+    fi
+    
+    log "SUSFS symbol fix applied for KernelSU-Next/All."
   fi
 fi
 
