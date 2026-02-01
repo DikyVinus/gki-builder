@@ -38,7 +38,7 @@ OUTDIR="$WORKDIR/out"
 KSRC="$WORKDIR/ksrc"
 KERNEL_PATCHES="$WORKDIR/kernel-patches"
 
-# Handle error
+ Handle error
 exec > >(tee $WORKDIR/build.log) 2>&1
 trap 'error "Failed at line $LINENO [$BASH_COMMAND]"' ERR
 
@@ -56,6 +56,22 @@ cd $KSRC
 LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
+
+# --- PATCH 500HZ (DIPASANG DI AWAL) ---
+log "Applying 500Hz patch..."
+wget -qO Inject_500hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_500hz.sh
+bash Inject_500hz.sh
+rm Inject_500hz.sh
+# --------------------------------------
+
+# --- TAMBAHKAN SCRIPT INJECT KSU ---
+log "Injecting custom KSU & SuSFS configs from GitHub..."
+export KSU
+export KSU_SUSFS
+wget -qO inject.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/gki_defconfig.sh
+bash inject.sh
+rm inject.sh
+# --------------------------------------
 cd $WORKDIR
 
 # Set Kernel variant
