@@ -20,22 +20,22 @@ on:
     inputs:
       TODO:
         description: To do
-        default: ""
+        default: "kernel"
         type: choice
         options:
           - "kernel"
           - "defconfig"
 
       KSU:
-        description: KernelSU variant
-        default: ""
+        description: Pilih Varian KernelSU
+        default: "Biasa"
         type: choice
         options:
           - "None"
+          - "Biasa"
           - "Next"
           - "All_Manager"
           - "Rissu"
-          - "Biasa"
           - "SukiSU"
           - "Wild"
 
@@ -55,9 +55,12 @@ on:
           - "true"
           - "false"
 
+      # LAST_BUILD dihapus dari workflow_dispatch karena build manual adalah BETA
+      # dan script build.sh mengabaikan LAST_BUILD jika status BETA.
+
       KERNEL_VERSION:
         description: Which kernel version do you want to build?
-        default: ""
+        default: "6.6"
         type: choice
         options:
           - "6.6"
@@ -114,7 +117,7 @@ jobs:
             _error "Missing GH_TOKEN secret (GitHub PAT)"
           fi
 
-          # Check KernelSU variants
+          # KernelSU & SuSFS Validation
           if [[ $KSU == "None" && $KSU_SUSFS == "true" ]]; then
               _error "Cannot use SuSFS without KernelSU"
           fi
@@ -129,26 +132,27 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio
+          sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio p7zip-full
           pip install lxml
 
-#      - name: Enable swap with high priority and swappiness
+#     - name: Enable swap with high priority and swappiness
 #       run: |
-#          sudo swapoff -a
-#          sudo fallocate -l 12G /swapfile
-#          sudo chmod 600 /swapfile
-#          sudo mkswap /swapfile
+#         sudo swapoff -a
+#         sudo fallocate -l 12G /swapfile
+#         sudo chmod 600 /swapfile
+#         sudo mkswap /swapfile
 #         sudo swapon /swapfile --priority 100
-#          sudo sysctl vm.swappiness=100
-#          free -h
+#         sudo sysctl vm.swappiness=100
+#         free -h
 #         echo
-#          swapon --show
+#         swapon --show
 
       - name: Run Build Script
         env:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }} # telegram chat id
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }} # telegram bot token
           GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
+          STATUS: ${{ env.STATUS }}
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
