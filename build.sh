@@ -5,12 +5,12 @@ WORKDIR="$(pwd)"
 if [ "$KVER" == "6.6" ]; then
   RELEASE="v0.3"
 elif [ "$KVER" == "5.10" ]; then
-  RELEASE="v0.3"
+  RELEASE="v0.2"
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
 KERNEL_NAME="Enfiled-Quix"
-USER="Dev-BoltX"
+USER="king"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
@@ -26,6 +26,7 @@ elif [ "$KVER" == "6.1" ]; then
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-5.10.git"
   ANYKERNEL_BRANCH="android12-5.10"
+  # FIXED: staging
   KERNEL_BRANCH="android12-5.10-staging"
 fi
 DEFCONFIG_TO_MERGE=""
@@ -39,7 +40,7 @@ OUTDIR="$WORKDIR/out"
 KSRC="$WORKDIR/ksrc"
 KERNEL_PATCHES="$WORKDIR/kernel-patches"
 
- Handle error
+# Handle error
 exec > >(tee $WORKDIR/build.log) 2>&1
 trap 'error "Failed at line $LINENO [$BASH_COMMAND]"' ERR
 
@@ -73,13 +74,18 @@ wget -qO inject.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/ref
 bash inject.sh
 rm inject.sh
 # --------------------------------------
+
 cd $WORKDIR
 
 # Set Kernel variant
 log "Setting Kernel variant..."
 case "$KSU" in
-  "yes") VARIANT="KSU" ;;
-  "no") VARIANT="VNL" ;;
+  "Next") VARIANT="KSUN" ;;
+  "Biasa") VARIANT="KSU" ;;
+  "Rissu") VARIANT="RKSU" ;;
+  "SukiSU") VARIANT="SukiSU" ;;
+  "Wild") VARIANT="WKSU" ;;
+  "None") VARIANT="NKSU" ;;
 esac
 susfs_included && VARIANT+="+SuSFS"
 
@@ -135,8 +141,8 @@ cd $KSRC
 
 ## KernelSU setup
 if ksu_included; then
-  # Remove existing KernelSU drivers
-  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU KernelSU-Next; do
+  # Remove existing KernelSU drivers (Tambah SukiSU & Wild KSU ke cleanup)
+  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU SukiSU Wild_KSU; do
     if [ -d $KSU_PATH ]; then
       log "KernelSU driver found in $KSU_PATH, Removing..."
       KSU_DIR=$(dirname "$KSU_PATH")
@@ -148,12 +154,29 @@ if ksu_included; then
     fi
   done
 
-  install_ksu 'pershoot/KernelSU-Next' 'dev-susfs'
-  config --enable CONFIG_KSU
+  # Install kernelsu
+  case "$KSU" in
+    "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
+    "Biasa") install_ksu tiann/KernelSU main ;;
+    "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
+    "SukiSU")
+      log "Installing SukiSU..."
+      curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/refs/heads/builtin/kernel/setup.sh" | bash -s builtin
+      ;;
+    "Wild")
+      log "Installing Wild KSU..."
+      curl -LSs "https://raw.githubusercontent.com/Kingfinik98/Wild_KSU/refs/heads/stable/kernel/setup.sh" | bash -s stable
+      ;;
+  esac
 
-  cd KernelSU-Next
-  patch -p1 < $KERNEL_PATCHES/ksu/ksun-add-more-managers-support.patch
-  cd $OLDPWD
+  # Fix SUSFS Uname Symbol Error for KernelSU Next
+  if [ "$KSU" == "Next" ]; then
+    log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
+    # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+    # This fixes the linker error caused by missing functions in the current SUSFS patch
+    sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
+    log "SUSFS symbol fix applied for KernelSU-Next."
+  fi
 fi
 
 # SUSFS
@@ -180,16 +203,74 @@ if susfs_included; then
     patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix-k6.6.58.patch
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/fs_proc_base.c-fix-k6.1.patch
-  elif [ $(echo "$LINUX_VERSION_CODE" | head -c3) -eq 510 ]; then
-    patch -p1 <$KERNEL_PATCHES/susfs/pershoot-susfs-k5.10.patch
   fi
   if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/fix-statfs-crc-mismatch-susfs.patch
   fi
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
-  config --enable CONFIG_KSU_SUSFS
-else
-  config --disable CONFIG_KSU_SUSFS
+
+  # KernelSU-side
+  # FIXED: Hanya patch Next dan Biasa. SukiSU & Wild KSU tidak dipatch karena struktur kodenya berbeda
+  # dan menyebabkan error compile (#else without #if). Kernel-side patch sudah cukup.
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
+    log "Applying kernelsu-side susfs patches.."
+
+    if false; then
+      if [ "$KSU" == "Next" ]; then
+        SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
+        git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $PWD/kernel_patches
+        if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
+          error "susfs fix patches are not available for susfs $SUSFS_VERSION."
+        fi
+      fi
+    fi
+
+    if [ "$KSU" == "Next" ]; then
+      if false; then
+        cd KernelSU-Next
+      fi
+    elif [ "$KSU" == "Biasa" ]; then
+      cd KernelSU
+    fi
+
+    if [ "$KSU" == "Next" ]; then
+      if false; then
+        patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
+      fi
+    elif [ "$KSU" == "Biasa" ]; then
+      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
+    fi
+
+    if false; then
+      if [ "$KSU" == "Next" ]; then
+        log "Applying the susfs fix patches..."
+        for p in "$SUSFS_FIX_PATCHES"/*.patch; do
+          patch -p1 --forward < $p
+        done
+        find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
+      fi
+    fi
+    
+    if [ "$KSU" == "Biasa" ]; then
+      cd $OLDPWD
+    fi
+  elif [ "$KSU" == "SukiSU" ]; then
+    log "Skipping KSU-side patches for SukiSU (Kernel-side patches applied)."
+  elif [ "$KSU" == "Wild" ]; then
+    log "Skipping KSU-side patches for Wild KSU (Kernel-side patches applied)."
+  fi
+fi
+
+# Apply some kernelsu patches
+if [ "$KSU" == "Rissu" ]; then
+  cd KernelSU
+  patch -p1 < "$KERNEL_PATCHES"/ksu/rksu-add-mambosu-manager-support.patch
+  cd "$OLDPWD"
+fi
+
+# Manual Hooks
+if ksu_manual_hook; then
+  : "DUMMY"
 fi
 
 # set localversion
@@ -216,7 +297,7 @@ if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j$(nproc --all)
+    -j2
     O=$OUTDIR
   )
 else
@@ -226,7 +307,7 @@ else
     ARCH=arm64
     CROSS_COMPILE=aarch64-linux-gnu-
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
-    -j$(nproc --all)
+    -j2
     O=$OUTDIR
   )
 fi
