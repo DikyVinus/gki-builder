@@ -27,16 +27,12 @@ on:
           - "defconfig"
 
       KSU:
-        description: KernelSU variant
+        description: KernelSU
         default: ""
         type: choice
         options:
-          - "None"
-          - "Next"
-          - "Rissu"
-          - "Biasa"
-          - "SukiSU"
-          - "Wild"
+          - "no"
+          - "yes"
 
       KSU_SUSFS:
         description: Include SUSFS?
@@ -113,11 +109,11 @@ jobs:
             _error "Missing GH_TOKEN secret (GitHub PAT)"
           fi
 
-          # Check KernelSU variants
-          if [[ $KSU == "None" && $KSU_SUSFS == "true" ]]; then
+          # KernelSU
+          if [[ $KSU == "no" && $KSU_SUSFS == "true" ]]; then
               _error "Cannot use SuSFS without KernelSU"
           fi
-          if [[ $KSU == "None" && $KSU_MANUAL_HOOK == "true" ]]; then
+          if [[ $KSU == "no" && $KSU_MANUAL_HOOK == "true" ]]; then
             _error "Cannot use KSU Manual Hooks without KernelSU!"
           fi
 
@@ -131,17 +127,17 @@ jobs:
           sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio
           pip install lxml
 
-#      - name: Enable swap with high priority and swappiness
+#     - name: Enable swap with high priority and swappiness
 #       run: |
-#          sudo swapoff -a
-#          sudo fallocate -l 12G /swapfile
-#          sudo chmod 600 /swapfile
-#          sudo mkswap /swapfile
+#         sudo swapoff -a
+#         sudo fallocate -l 12G /swapfile
+#         sudo chmod 600 /swapfile
+#         sudo mkswap /swapfile
 #         sudo swapon /swapfile --priority 100
-#          sudo sysctl vm.swappiness=100
-#          free -h
+#         sudo sysctl vm.swappiness=100
+#         free -h
 #         echo
-#          swapon --show
+#         swapon --show
 
       - name: Run Build Script
         env:
