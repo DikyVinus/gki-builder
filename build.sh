@@ -284,11 +284,11 @@ fi
 
 text=$(
   cat << EOF
-🐧 *Linux Version*: $LINUX_VERSION
-📅 *Build Date*: $KBUILD_BUILD_TIMESTAMP
-📛 *KernelSU*: ${KSU}
-ඞ *SuSFS*: $(susfs_included && echo "$SUSFS_VERSION" || echo "None")
-🔰 *Compiler*: $COMPILER_STRING
+🐧 Linux Version: $LINUX_VERSION
+📅 Build Date: $KBUILD_BUILD_TIMESTAMP
+📛 KernelSU: ${KSU}
+ඞ SuSFS: $(susfs_included && echo "$SUSFS_VERSION" || echo "None")
+🔰 Compiler: $COMPILER_STRING
 EOF
 )
 
