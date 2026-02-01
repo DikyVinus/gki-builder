@@ -309,7 +309,7 @@ if [ "$DEFCONFIG_TO_MERGE" ]; then
 fi
 
 # Upload defconfig if we are doing defconfig
-if [ $TODO == "defconfig" ]; then
+if [ "$TODO" == "defconfig" ]; then
   log "Uploading defconfig..."
   upload_file $OUTDIR/.config
   exit 0
@@ -356,16 +356,13 @@ cp $KERNEL_IMAGE .
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
-# --- FIX ARTIFACTS: Selalu siapkan artifacts agar bisa di download di GitHub Action ---
-# Set BASE_NAME agar nama artifact di GA tidak error/kosong
-echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
+if [ "$STATUS" != "BETA" ]; then
+  echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
+  mkdir -p $WORKDIR/artifacts
+  mv $WORKDIR/*.zip $WORKDIR/artifacts
+fi
 
-# Selalu pindahkan zip ke folder artifacts (BETA maupun RELEASE)
-mkdir -p $WORKDIR/artifacts
-mv $WORKDIR/*.zip $WORKDIR/artifacts
-# ---------------------------------------------------------------------------------------
-
-if [ $LAST_BUILD == "true" ] && [ "$STATUS" != "BETA" ]; then
+if [ "$LAST_BUILD" == "true" ] && [ "$STATUS" != "BETA" ]; then
   (
     echo "LINUX_VERSION=$LINUX_VERSION"
     echo "SUSFS_VERSION=$(curl -s https://gitlab.com/simonpunk/susfs4ksu/raw/gki-android15-6.6/kernel_patches/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g')"
@@ -374,14 +371,10 @@ if [ $LAST_BUILD == "true" ] && [ "$STATUS" != "BETA" ]; then
   ) >> $WORKDIR/artifacts/info.txt
 fi
 
-# --- FIX: BAGIAN AKHIR UPLOAD SESUAI---
 if [ "$STATUS" == "BETA" ]; then
-  # Jika BETA (Manual): Upload ZIP + Log ke Bot (Hasilnya seperti di Screenshot)
-  upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
+  upload_file "$WORKDIR/$AK3_ZIP_NAME" "$text"
   upload_file "$WORKDIR/build.log"
 else
-  # Jika RELEASE (Otomatis): Hanya kirim pesan sukses ke Bot
-  # File tidak dikirim ke bot, hanya aman di GitHub Artifacts
   send_msg "✅ Build Succeeded for $VARIANT variant."
 fi
 
