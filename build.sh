@@ -80,7 +80,7 @@ cd $WORKDIR
 log "Setting Kernel variant..."
 case "$KSU" in
   "Next") VARIANT="KSUN" ;;
-  "All") VARIANT="KSU-ALL" ;; # Tipe Baru: KernelSU Next Support All Manager
+  "All_Manager") VARIANT="KSUN-ALL" ;;
   "Biasa") VARIANT="KSU" ;;
   "Rissu") VARIANT="RKSU" ;;
   "SukiSU") VARIANT="SukiSU" ;;
@@ -141,7 +141,7 @@ cd $KSRC
 
 ## KernelSU setup
 if ksu_included; then
-  # Remove existing KernelSU drivers (Tambah SukiSU, Wild KSU & KernelSU-Next ke cleanup)
+  # Remove existing KernelSU drivers
   for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU KernelSU-Next SukiSU Wild_KSU; do
     if [ -d $KSU_PATH ]; then
       log "KernelSU driver found in $KSU_PATH, Removing..."
@@ -156,15 +156,15 @@ if ksu_included; then
 
   # Install kernelsu
   case "$KSU" in
-    "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
-    "All")
-      # Tipe Baru: Install KernelSU-Next dengan patch All Manager Support
+    "All_Manager")
+      log "Installing KernelSU-Next (All Manager Patch)..."
       install_ksu 'pershoot/KernelSU-Next' 'dev-susfs'
       config --enable CONFIG_KSU
       cd KernelSU-Next
       patch -p1 < $KERNEL_PATCHES/ksu/ksun-add-more-managers-support.patch
       cd $OLDPWD
       ;;
+    "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
     "SukiSU")
@@ -177,26 +177,13 @@ if ksu_included; then
       ;;
   esac
 
-  # Fix SUSFS Uname Symbol Error for KernelSU Next & All
-  if [ "$KSU" == "Next" ] || [ "$KSU" == "All" ]; then
-    log "Applying fix for undefined SUSFS symbols (KernelSU-Next/All)..."
-    
-    # Matikan blok #ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME agar tidak memanggil symbol yang tidak ada
+  # Fix SUSFS Uname Symbol Error for KernelSU Next & All_Manager
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "All_Manager" ]; then
+    log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
+    # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+    # This fixes the linker error caused by missing functions in the current SUSFS patch
     sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
-    
-    # Fix khusus untuk error log yang muncul: undefined symbol susfs_uname_is_active
-    # Kita ganti pemanggilan fungsinya dengan 0 (false) agar kondisi if tidak jalan
-    if grep -q "susfs_uname_is_active" drivers/kernelsu/supercalls.c; then
-       sed -i 's/susfs_uname_is_active()/0 \/\* disabled \*\//g' drivers/kernelsu/supercalls.c
-    fi
-    
-    # Fix khusus untuk error log: undefined symbol susfs_set_uname_from_kernel
-    # Kita komentari barisnya agar tidak dipanggil
-    if grep -q "susfs_set_uname_from_kernel" drivers/kernelsu/supercalls.c; then
-       sed -i 's/susfs_set_uname_from_kernel(/\/\/ susfs_set_uname_from_kernel(/g' drivers/kernelsu/supercalls.c
-    fi
-    
-    log "SUSFS symbol fix applied for KernelSU-Next/All."
+    log "SUSFS symbol fix applied for KernelSU-Next."
   fi
 fi
 
