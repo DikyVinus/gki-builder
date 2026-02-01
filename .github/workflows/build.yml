@@ -13,9 +13,10 @@ on:
         type: string
       LAST_BUILD:
         type: string
+        default: "false"
       KERNEL_VERSION:
         type: string
-      BUILD_STATUS: # Tambahan untuk workflow_call
+      BUILD_STATUS:
         type: string
         default: "RELEASE"
 
@@ -58,6 +59,14 @@ on:
           - "true"
           - "false"
 
+      LAST_BUILD: # DITAMBAHKAN: Agar sinkron dengan build.sh untuk create info.txt
+        description: Is Last Build?
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
       KERNEL_VERSION:
         description: Which kernel version do you want to build?
         default: "6.6"
@@ -67,7 +76,7 @@ on:
           - "6.1"
           - "5.10"
 
-      BUILD_STATUS: # Pilihan Manual BETA / RELEASE
+      BUILD_STATUS:
         description: Tipe Build
         default: "BETA"
         type: choice
@@ -157,7 +166,7 @@ jobs:
           LAST_BUILD: ${{ inputs.LAST_BUILD }}
           TODO: ${{ inputs.TODO }}
           KVER: ${{ inputs.KERNEL_VERSION }}
-          STATUS: ${{ env.STATUS }} # PENTING: Memastikan STATUS diteruskan ke build.sh
+          STATUS: ${{ env.STATUS }}
         run: |
           export GIT_CLONE_PROTECTION_ACTIVE=false
           chmod +x *.sh py/*.py
