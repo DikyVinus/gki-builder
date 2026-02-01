@@ -167,15 +167,6 @@ if ksu_included; then
       curl -LSs "https://raw.githubusercontent.com/Kingfinik98/Wild_KSU/refs/heads/stable/kernel/setup.sh" | bash -s stable
       ;;
   esac
-
-  # Fix SUSFS Uname Symbol Error for KernelSU Next
-  if [ "$KSU" == "Next" ]; then
-    log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
-    # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
-    # This fixes the linker error caused by missing functions in the current SUSFS patch
-    sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
-    log "SUSFS symbol fix applied for KernelSU-Next."
-  fi
 fi
 
 # SUSFS
@@ -258,6 +249,307 @@ if susfs_included; then
   elif [ "$KSU" == "Wild" ]; then
     log "Skipping KSU-side patches for Wild KSU (Kernel-side patches applied)."
   fi
+fi
+
+# Fix SUSFS Uname Symbol Error for KernelSU Next
+# This block ONLY executes if KSU type is "Next"
+if [ "$KSU" == "Next" ]; then
+  log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
+  # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+  # This fixes the linker error caused by missing functions in the current SUSFS patch
+  sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
+  log "✅ SUSFS symbol fix applied for KernelSU-Next."
+fi
+
+# Apply some kernelsu patches
+if [ "$KSU" == "Rissu" ]; then
+  cd KernelSU
+  patch -p1 < "$KERNEL_PATCHES"/ksu/rksu-add-mambosu-manager-support.patch
+  cd "$OLDPWD"
+fi
+
+# Manual Hooks
+if ksu_manual_hook; then
+  : "DUMMY"
+fi
+
+# set localversion
+if [ $TODO == "kernel" ]; then
+  LATEST_COMMIT_HASH=$(git rev-parse --short HEAD)
+  if [ $STATUS == "BETA" ]; then
+    SUFFIX="$LATEST_COMMIT_HASH"
+  else
+    SUFFIX="${RELEASE}@${LATEST_COMMIT_HASH}"
+  fi
+  config --set-str CONFIG_LOCALVERSION "-$KERNEL_NAME/$SUFFIX"
+  config --disable CONFIG_LOCALVERSION_AUTO
+  sed -i 's/echo "+"/# echo "+"/g' scripts/setlocalversion
+fi
+
+# Declare needed variables
+export KBUILD_BUILD_USER="$USER"
+export KBUILD_BUILD_HOST="$HOST"
+export KBUILD_BUILD_TIMESTAMP=$(date)
+export KCFLAGS="-w"
+if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
+  MAKE_ARGS=(
+    LLVM=1
+    ARCH=arm64
+    CROSS_COMPILE=aarch64-linux-gnu-
+    CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
+    -j2
+    O=$OUTDIR
+  )
+else
+  MAKE_ARGS=(
+    LLVM=1
+    LLVM_IAS=1
+    ARCH=arm64
+    CROSS_COMPILE=aarch64-linux-gnu-
+    CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
+    -j2
+    O=$OUTDIR
+  )
+fi
+
+KERNEL_IMAGE="$OUTDIR/arch/arm64/boot/Image"
+MODULE_SYMVERS="$OUTDIR/Module.symvers"
+if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
+  KMI_CHECK="$WORKDIR/py/kmi-check-6.x.py"
+else
+  KMI_CHECK="$WORKDIR/py/kmi-check-5.x.py"
+fi
+
+text=$(
+  cat << EOF
+🐧 *Linux Version*: $LINUX_VERSION
+📅 *Build Date*: $KBUILD_BUILD_TIMESTAMP
+📛 *KernelSU*: ${KSU}
+ඞ *SuSFS*: $(susfs_included && echo "$SUSFS_VERSION" || echo "None")
+🔰 *Compiler*: $COMPILER_STRING
+EOF
+)
+
+## Build GKI
+log "Generating config..."
+make ${MAKE_ARGS[@]} $KERNEL_DEFCONFIG
+
+if [ "$DEFCONFIG_TO_MERGE" ]; then
+  log "Merging configs..."
+  if [ -f "scripts/kconfig/merge_config.sh" ]; then
+    for config in $DEFCONFIG_TO_MERGE; do
+      make ${MAKE_ARGS[@]} scripts/kconfig/merge_config.sh $config
+    done
+  else
+    error "scripts/kconfig/merge_config.sh does not exist in the kernel source"
+  fi
+  make ${MAKE_ARGS[@]} olddefconfig
+fi
+
+# Upload defconfig if we are doing defconfig
+if [ $TODO == "defconfig" ]; then
+  log "Uploading defconfig..."
+  upload_file $OUTDIR/.config
+  exit 0
+fi
+
+# Build the actual kernel
+log "Building kernel..."
+make ${MAKE_ARGS[@]}
+
+# Check KMI Function symbol
+if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
+  $KMI_CHECK "$KSRC/android/abi_gki_aarch64.stg" "$MODULE_SYMVERS" || true
+else
+  $KMI_CHECK "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS" || true
+fi
+
+## Post-compiling stuff
+cd $WORKDIR
+
+# Clone AnyKernel
+log "Cloning anykernel from $(simplify_gh_url "$ANYKERNEL_REPO")"
+git clone -q --depth=1 $ANYKERNEL_REPO -b $ANYKERNEL_BRANCH anykernel
+
+# Set kernel string in anykernel
+if [ $STATUS == "BETA" ]; then
+  BUILD_DATE=$(date -d "$KBUILD_BUILD_TIMESTAMP" +"%Y%m%d-%H%M")
+  AK3_ZIP_NAME=${AK3_ZIP_NAME//BUILD_DATE/$BUILD_DATE}
+  AK3_ZIP_NAME=${AK3_ZIP_NAME//-REL/}
+  sed -i \
+    "s/kernel.string=.*/kernel.string=${KERNEL_NAME} ${LINUX_VERSION} (${BUILD_DATE}) ${VARIANT}/g" \
+    $WORKDIR/anykernel/anykernel.sh
+else
+  AK3_ZIP_NAME=${AK3_ZIP_NAME//-BUILD_DATE/}
+  AK3_ZIP_NAME=${AK3_ZIP_NAME//REL/$RELEASE}
+  sed -i \
+    "s/kernel.string=.*/kernel.string=${KERNEL_NAME} ${RELEASE} ${LINUX_VERSION} ${VARIANT}/g" \
+    $WORKDIR/anykernel/anykernel.sh
+fi
+
+# Zip the anykernel
+cd anykernel
+log "Zipping anykernel..."
+cp $KERNEL_IMAGE .
+zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
+cd $OLDPWD
+
+if [ $STATUS != "BETA" ]; then
+  echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
+  mkdir -p $WORKDIR/artifacts
+  mv $WORKDIR/*.zip $WORKDIR/artifacts
+fi
+
+if [ $LAST_BUILD == "true" ] && [ $STATUS != "BETA" ]; then
+  (
+    echo "LINUX_VERSION=$LINUX_VERSION"
+    echo "SUSFS_VERSION=$(curl -s https://gitlab.com/simonpunk/susfs4ksu/raw/gki-android15-6.6/kernel_patches/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g')"
+    echo "KERNEL_NAME=$KERNEL_NAME"
+    echo "RELEASE_REPO=$(simplify_gh_url "$GKI_RELEASES_REPO")"
+  ) >> $WORKDIR/artifacts/info.txt
+fi
+
+if [ $STATUS == "BETA" ]; then
+  upload_file "$WORKDIR/$AK3_ZIP_NAME" "$text"
+  upload_file "$WORKDIR/build.log"
+else
+  send_msg "✅ Build Succeeded for $VARIANT variant."
+fi
+
+exit 0GAS_DIR="$WORKDIR/gas"
+git clone --depth=1 -q \
+  https://android.googlesource.com/platform/prebuilts/gas/linux-x86 \
+  -b main \
+  "$GAS_DIR"
+
+export PATH="${CLANG_BIN}:${GAS_DIR}:$PATH"
+
+# Extract clang version
+COMPILER_STRING=$(clang -v 2>&1 | head -n 1 | sed 's/(https..*//' | sed 's/ version//')
+
+cd $KSRC
+
+## KernelSU setup
+if ksu_included; then
+  # Remove existing KernelSU drivers (Tambah SukiSU & Wild KSU ke cleanup)
+  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU SukiSU Wild_KSU; do
+    if [ -d $KSU_PATH ]; then
+      log "KernelSU driver found in $KSU_PATH, Removing..."
+      KSU_DIR=$(dirname "$KSU_PATH")
+
+      [ -f "$KSU_DIR/Kconfig" ] && sed -i '/kernelsu/d' $KSU_DIR/Kconfig
+      [ -f "$KSU_DIR/Makefile" ] && sed -i '/kernelsu/d' $KSU_DIR/Makefile
+
+      rm -rf $KSU_PATH
+    fi
+  done
+
+  # Install kernelsu
+  case "$KSU" in
+    "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
+    "Biasa") install_ksu tiann/KernelSU main ;;
+    "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
+    "SukiSU")
+      log "Installing SukiSU..."
+      curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/refs/heads/builtin/kernel/setup.sh" | bash -s builtin
+      ;;
+    "Wild")
+      log "Installing Wild KSU..."
+      curl -LSs "https://raw.githubusercontent.com/Kingfinik98/Wild_KSU/refs/heads/stable/kernel/setup.sh" | bash -s stable
+      ;;
+  esac
+fi
+
+# SUSFS
+if susfs_included; then
+  # Kernel-side
+  log "Applying kernel-side susfs patches"
+  SUSFS_DIR="$WORKDIR/susfs"
+  SUSFS_PATCHES="${SUSFS_DIR}/kernel_patches"
+  if [ "$KVER" == "6.6" ]; then
+    SUSFS_BRANCH=gki-android15-6.6
+  elif [ "$KVER" == "6.1" ]; then
+    SUSFS_BRANCH=gki-android14-6.1
+  elif [ "$KVER" == "5.10" ]; then
+    SUSFS_BRANCH=gki-android12-5.10
+  fi
+  git clone --depth=1 -q https://gitlab.com/simonpunk/susfs4ksu -b $SUSFS_BRANCH $SUSFS_DIR
+  cp -R $SUSFS_PATCHES/fs/* ./fs
+  cp -R $SUSFS_PATCHES/include/* ./include
+  patch -p1 < $SUSFS_PATCHES/50_add_susfs_in_${SUSFS_BRANCH}.patch || true
+  if [ $LINUX_VERSION_CODE -eq 6630 ]; then
+    patch -p1 < $KERNEL_PATCHES/susfs/namespace.c_fix.patch
+    patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix.patch
+  elif [ $LINUX_VERSION_CODE -eq 6658 ]; then
+    patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix-k6.6.58.patch
+  elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
+    patch -p1 < $KERNEL_PATCHES/susfs/fs_proc_base.c-fix-k6.1.patch
+  fi
+  if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
+    patch -p1 < $KERNEL_PATCHES/susfs/fix-statfs-crc-mismatch-susfs.patch
+  fi
+  SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
+
+  # KernelSU-side
+  # FIXED: Hanya patch Next dan Biasa. SukiSU & Wild KSU tidak dipatch karena struktur kodenya berbeda
+  # dan menyebabkan error compile (#else without #if). Kernel-side patch sudah cukup.
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
+    log "Applying kernelsu-side susfs patches.."
+
+    if false; then
+      if [ "$KSU" == "Next" ]; then
+        SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
+        git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $PWD/kernel_patches
+        if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
+          error "susfs fix patches are not available for susfs $SUSFS_VERSION."
+        fi
+      fi
+    fi
+
+    if [ "$KSU" == "Next" ]; then
+      if false; then
+        cd KernelSU-Next
+      fi
+    elif [ "$KSU" == "Biasa" ]; then
+      cd KernelSU
+    fi
+
+    if [ "$KSU" == "Next" ]; then
+      if false; then
+        patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
+      fi
+    elif [ "$KSU" == "Biasa" ]; then
+      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
+    fi
+
+    if false; then
+      if [ "$KSU" == "Next" ]; then
+        log "Applying the susfs fix patches..."
+        for p in "$SUSFS_FIX_PATCHES"/*.patch; do
+          patch -p1 --forward < $p
+        done
+        find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
+      fi
+    fi
+    
+    if [ "$KSU" == "Biasa" ]; then
+      cd $OLDPWD
+    fi
+  elif [ "$KSU" == "SukiSU" ]; then
+    log "Skipping KSU-side patches for SukiSU (Kernel-side patches applied)."
+  elif [ "$KSU" == "Wild" ]; then
+    log "Skipping KSU-side patches for Wild KSU (Kernel-side patches applied)."
+  fi
+fi
+
+# Fix SUSFS Uname Symbol Error for KernelSU Next
+# This block ONLY executes if KSU type is "Next"
+if [ "$KSU" == "Next" ]; then
+  log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
+  # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+  # This fixes the linker error caused by missing functions in the current SUSFS patch
+  sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
+  log "✅ SUSFS symbol fix applied for KernelSU-Next."
 fi
 
 # Apply some kernelsu patches
