@@ -9,8 +9,8 @@ elif [ "$KVER" == "5.10" ]; then
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
-KERNEL_NAME="BX-Enfiled"
-USER="king"
+KERNEL_NAME="Enfiled-Quix"
+USER="Dev-BoltX"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
@@ -31,14 +31,15 @@ fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
+#CLANG_URL="$(./clang.sh slim)"
 CLANG_URL="https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/archive/refs/heads/lineage-20.0.tar.gz"
 CLANG_BRANCH=""
-AK3_ZIP_NAME="$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
+AK3_ZIP_NAME="AK3-$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
 OUTDIR="$WORKDIR/out"
 KSRC="$WORKDIR/ksrc"
 KERNEL_PATCHES="$WORKDIR/kernel-patches"
 
-# Handle error
+ Handle error
 exec > >(tee $WORKDIR/build.log) 2>&1
 trap 'error "Failed at line $LINENO [$BASH_COMMAND]"' ERR
 
@@ -56,6 +57,22 @@ cd $KSRC
 LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
+
+# --- PATCH 500HZ (DIPASANG DI AWAL) ---
+log "Applying 500Hz patch..."
+wget -qO Inject_500hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_500hz.sh
+bash Inject_500hz.sh
+rm Inject_500hz.sh
+# --------------------------------------
+
+# --- TAMBAHKAN SCRIPT INJECT KSU ---
+log "Injecting custom KSU & SuSFS configs from GitHub..."
+export KSU
+export KSU_SUSFS
+wget -qO inject.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/gki_defconfig.sh
+bash inject.sh
+rm inject.sh
+# --------------------------------------
 cd $WORKDIR
 
 # Set Kernel variant
@@ -156,15 +173,15 @@ if susfs_included; then
   cp -R $SUSFS_PATCHES/fs/* ./fs
   cp -R $SUSFS_PATCHES/include/* ./include
   patch -p1 < $SUSFS_PATCHES/50_add_susfs_in_${SUSFS_BRANCH}.patch || true
-  if [ $(echo "$LINUX_VERSION_CODE" | head -c4) -eq 6630 ]; then
+  if [ $LINUX_VERSION_CODE -eq 6630 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/namespace.c_fix.patch
     patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix.patch
-  elif [ $(echo "$LINUX_VERSION_CODE" | head -c4) -eq 6658 ]; then
+  elif [ $LINUX_VERSION_CODE -eq 6658 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix-k6.6.58.patch
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/fs_proc_base.c-fix-k6.1.patch
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c3) -eq 510 ]; then
-    patch -p1 < $KERNEL_PATCHES/susfs/pershoot-susfs-k5.10.patch
+    patch -p1 <$KERNEL_PATCHES/susfs/pershoot-susfs-k5.10.patch
   fi
   if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/fix-statfs-crc-mismatch-susfs.patch
