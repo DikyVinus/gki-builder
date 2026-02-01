@@ -2,7 +2,6 @@
 
 # Constants
 WORKDIR="$(pwd)"
-# Menambahkan tanda kutip pada variabel untuk keamanan
 if [ "$KVER" == "6.6" ]; then
   RELEASE="v0.3"
 elif [ "$KVER" == "5.10" ]; then
@@ -26,10 +25,10 @@ elif [ "$KVER" == "6.1" ]; then
   ANYKERNEL_BRANCH="android14-6.1"
   KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
-  # Menggunakan repo dari referensi Anda
-  KERNEL_REPO="https://github.com/ramabondanp/kernel-android12-5.10"
+  KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-5.10.git"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="master"
+  # FIXED: staging
+  KERNEL_BRANCH="android12-5.10-staging"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
@@ -60,14 +59,14 @@ LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
 
-# --- PATCH 500HZ (DIPASANG DI AWAL) ---
+# --- PATCH 500HZ (INSTALLED AT START) ---
 log "Applying 500Hz patch..."
 wget -qO Inject_500hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_500hz.sh
 bash Inject_500hz.sh
 rm Inject_500hz.sh
 # --------------------------------------
 
-# --- TAMBAHKAN SCRIPT INJECT KSU ---
+# --- ADD SCRIPT INJECT KSU ---
 log "Injecting custom KSU & SuSFS configs from GitHub..."
 export KSU
 export KSU_SUSFS
@@ -82,6 +81,7 @@ cd $WORKDIR
 log "Setting Kernel variant..."
 case "$KSU" in
   "Next") VARIANT="KSUN" ;;
+  "All_Manager") VARIANT="KSUN-ALL" ;;
   "Biasa") VARIANT="KSU" ;;
   "Rissu") VARIANT="RKSU" ;;
   "SukiSU") VARIANT="SukiSU" ;;
@@ -143,8 +143,8 @@ cd $KSRC
 ## KernelSU setup
 if ksu_included; then
   # Remove existing KernelSU drivers
-  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU SukiSU Wild_KSU; do
-    if [ -d "$KSU_PATH" ]; then
+  for KSU_PATH in drivers/staging/kernelsu drivers/kernelsu KernelSU KernelSU-Next SukiSU Wild_KSU; do
+    if [ -d $KSU_PATH ]; then
       log "KernelSU driver found in $KSU_PATH, Removing..."
       KSU_DIR=$(dirname "$KSU_PATH")
 
@@ -157,6 +157,14 @@ if ksu_included; then
 
   # Install kernelsu
   case "$KSU" in
+    "All_Manager")
+      log "Installing KernelSU-Next (All Manager Patch)..."
+      install_ksu 'pershoot/KernelSU-Next' 'dev-susfs'
+      config --enable CONFIG_KSU
+      cd KernelSU-Next
+      patch -p1 < $KERNEL_PATCHES/ksu/ksun-add-more-managers-support.patch
+      cd $OLDPWD
+      ;;
     "Next") install_ksu $(susfs_included && echo 'pershoot/KernelSU-Next dev-susfs' || echo 'pershoot/KernelSU-Next dev-susfs') ;;
     "Biasa") install_ksu tiann/KernelSU main ;;
     "Rissu") install_ksu rsuntk/KernelSU $(susfs_included && echo susfs-rksu-master || echo main) ;;
@@ -169,6 +177,15 @@ if ksu_included; then
       curl -LSs "https://raw.githubusercontent.com/Kingfinik98/Wild_KSU/refs/heads/stable/kernel/setup.sh" | bash -s stable
       ;;
   esac
+
+  # Fix SUSFS Uname Symbol Error for KernelSU Next & All_Manager
+  if [ "$KSU" == "Next" ] || [ "$KSU" == "All_Manager" ]; then
+    log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
+    # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+    # This fixes the linker error caused by missing functions in the current SUSFS patch
+    sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
+    log "SUSFS symbol fix applied for KernelSU-Next."
+  fi
 fi
 
 # SUSFS
@@ -188,74 +205,23 @@ if susfs_included; then
   cp -R $SUSFS_PATCHES/fs/* ./fs
   cp -R $SUSFS_PATCHES/include/* ./include
   patch -p1 < $SUSFS_PATCHES/50_add_susfs_in_${SUSFS_BRANCH}.patch || true
-  if [ "$LINUX_VERSION_CODE" -eq 6630 ]; then
+  if [ $(echo "$LINUX_VERSION_CODE" | head -c4) -eq 6630 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/namespace.c_fix.patch
     patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix.patch
-  elif [ "$LINUX_VERSION_CODE" -eq 6658 ]; then
+  elif [ $(echo "$LINUX_VERSION_CODE" | head -c4) -eq 6658 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix-k6.6.58.patch
   elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/fs_proc_base.c-fix-k6.1.patch
+  elif [ $(echo "$LINUX_VERSION_CODE" | head -c3) -eq 510 ]; then
+    patch -p1 < $KERNEL_PATCHES/susfs/pershoot-susfs-k5.10.patch
   fi
   if [ $(echo "$LINUX_VERSION_CODE" | head -c1) -eq 6 ]; then
     patch -p1 < $KERNEL_PATCHES/susfs/fix-statfs-crc-mismatch-susfs.patch
   fi
   SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
-
-  # KernelSU-side
-  if [ "$KSU" == "Next" ] || [ "$KSU" == "Biasa" ]; then
-    log "Applying kernelsu-side susfs patches.."
-
-    if false; then
-      if [ "$KSU" == "Next" ]; then
-        SUSFS_FIX_PATCHES="$PWD/kernel_patches/next/susfs_fix_patches/$SUSFS_VERSION"
-        git clone --depth=1 -q https://github.com/WildKernels/kernel_patches $PWD/kernel_patches
-        if [ ! -d "$SUSFS_FIX_PATCHES" ]; then
-          error "susfs fix patches are not available for susfs $SUSFS_VERSION."
-        fi
-      fi
-    fi
-
-    if [ "$KSU" == "Next" ]; then
-      if false; then
-        cd KernelSU-Next
-      fi
-    elif [ "$KSU" == "Biasa" ]; then
-      cd KernelSU
-    fi
-
-    if [ "$KSU" == "Next" ]; then
-      if false; then
-        patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch || true
-      fi
-    elif [ "$KSU" == "Biasa" ]; then
-      patch -p1 < $SUSFS_PATCHES/KernelSU/10_enable_susfs_for_ksu.patch
-    fi
-
-    if false; then
-      if [ "$KSU" == "Next" ]; then
-        log "Applying the susfs fix patches..."
-        for p in "$SUSFS_FIX_PATCHES"/*.patch; do
-          patch -p1 --forward < $p
-        done
-        find . -type f \( -name '*.orig' -o -name '*.rej' \) -delete
-      fi
-    fi
-    
-    if [ "$KSU" == "Biasa" ]; then
-      cd $OLDPWD
-    fi
-  elif [ "$KSU" == "SukiSU" ]; then
-    log "Skipping KSU-side patches for SukiSU (Kernel-side patches applied)."
-  elif [ "$KSU" == "Wild" ]; then
-    log "Skipping KSU-side patches for Wild KSU (Kernel-side patches applied)."
-  fi
-fi
-
-# Fix SUSFS Uname Symbol Error for KernelSU Next
-if [ "$KSU" == "Next" ]; then
-  log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
-  sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
-  log "✅ SUSFS symbol fix applied for KernelSU-Next."
+  config --enable CONFIG_KSU_SUSFS
+else
+  config --disable CONFIG_KSU_SUSFS
 fi
 
 # Apply some kernelsu patches
@@ -271,7 +237,7 @@ if ksu_manual_hook; then
 fi
 
 # set localversion
-if [ "$TODO" == "kernel" ]; then
+if [ $TODO == "kernel" ]; then
   LATEST_COMMIT_HASH=$(git rev-parse --short HEAD)
   if [ "$STATUS" == "BETA" ]; then
     SUFFIX="$LATEST_COMMIT_HASH"
@@ -317,7 +283,7 @@ else
   KMI_CHECK="$WORKDIR/py/kmi-check-5.x.py"
 fi
 
-# --- PERBAIKAN TEXT TELEGRAM (Menghapus tanda bintang * agar tidak error parse) ---
+# PREPARE TEXT FOR RELEASE NOTES (Removed Markdown symbols to avoid Telegram errors)
 text=$(
   cat << EOF
 Linux Version: $LINUX_VERSION
@@ -345,7 +311,7 @@ if [ "$DEFCONFIG_TO_MERGE" ]; then
 fi
 
 # Upload defconfig if we are doing defconfig
-if [ "$TODO" == "defconfig" ]; then
+if [ $TODO == "defconfig" ]; then
   log "Uploading defconfig..."
   upload_file $OUTDIR/.config
   exit 0
@@ -392,17 +358,16 @@ cp $KERNEL_IMAGE .
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
-# --- LOGIC UPLOAD SESUAI ACUAN ANDA ---
+# --- PREPARE ARTIFACTS ---
+# Set BASE_NAME so the artifact name in GA does not error/empty
+echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
 
-# 1. Hanya pindahkan ke artifacts jika BUKAN BETA (Release)
-if [ "$STATUS" != "BETA" ]; then
-  echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
-  mkdir -p $WORKDIR/artifacts
-  mv $WORKDIR/*.zip $WORKDIR/artifacts
-fi
+# Always move zip to artifacts folder (BETA and RELEASE)
+mkdir -p $WORKDIR/artifacts
+mv $WORKDIR/*.zip $WORKDIR/artifacts
+# ---------------------------------------------------------------------------------------
 
-# 2. Buat info.txt jika Release dan Last Build
-if [ "$LAST_BUILD" == "true" ] && [ "$STATUS" != "BETA" ]; then
+if [ $LAST_BUILD == "true" ] && [ "$STATUS" != "BETA" ]; then
   (
     echo "LINUX_VERSION=$LINUX_VERSION"
     echo "SUSFS_VERSION=$(curl -s https://gitlab.com/simonpunk/susfs4ksu/raw/gki-android15-6.6/kernel_patches/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g')"
@@ -411,14 +376,35 @@ if [ "$LAST_BUILD" == "true" ] && [ "$STATUS" != "BETA" ]; then
   ) >> $WORKDIR/artifacts/info.txt
 fi
 
-# 3. Upload / Kirim Pesan
+# --- UPLOAD LOGIC ---
+
 if [ "$STATUS" == "BETA" ]; then
-  # Upload file dari $WORKDIR (karena belum dipindah ke artifacts)
-  upload_file "$WORKDIR/$AK3_ZIP_NAME" "$text"
+  # For BETA: Upload file to Telegram as usual (with fixed text)
+  upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
   upload_file "$WORKDIR/build.log"
 else
-  # Release hanya kirim pesan sukses (file diambil dari GitHub Actions artifacts)
-  send_msg "✅ Build Succeeded for $VARIANT variant."
+  # For RELEASE: 
+  # 1. Send simple success notification to Telegram (NO FILE UPLOAD)
+  # 2. Upload file to GitHub Releases
+  
+  # Send Telegram Notification (Plain text to avoid error)
+  send_msg "Build Succeeded: $KERNEL_NAME $RELEASE ($VARIANT). File uploaded to GitHub Releases."
+  
+  # Upload to GitHub Releases
+  log "Uploading to GitHub Releases: $GKI_RELEASES_REPO"
+  
+  # Check if release tag already exists to update or create new
+  if gh release view "$RELEASE" --repo "$GKI_RELEASES_REPO" > /dev/null 2>&1; then
+    log "Release $RELEASE exists. Uploading asset..."
+    gh release upload "$RELEASE" "$WORKDIR/artifacts/$AK3_ZIP_NAME" --repo "$GKI_RELEASES_REPO" --clobber
+  else
+    log "Creating new release $RELEASE..."
+    gh release create "$RELEASE" \
+      --repo "$GKI_RELEASES_REPO" \
+      --title "$KERNEL_NAME $RELEASE ($VARIANT)" \
+      --notes "$text" \
+      "$WORKDIR/artifacts/$AK3_ZIP_NAME"
+  fi
 fi
 
 exit 0
