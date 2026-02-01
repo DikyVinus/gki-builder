@@ -15,7 +15,7 @@ on:
         type: string
       KERNEL_VERSION:
         type: string
-      BUILD_STATUS: # Added for consistency
+      BUILD_STATUS: # Tambahan untuk workflow_call
         type: string
         default: "RELEASE"
 
@@ -67,7 +67,7 @@ on:
           - "6.1"
           - "5.10"
 
-      BUILD_STATUS:
+      BUILD_STATUS: # Pilihan Manual BETA / RELEASE
         description: Tipe Build
         default: "BETA"
         type: choice
@@ -95,7 +95,7 @@ jobs:
             echo "STATUS=${{ inputs.BUILD_STATUS }}" >> $GITHUB_ENV
             echo "TRIGGER=workflow_dispatch" >> $GITHUB_ENV
           else
-            # Jika dipanggil oleh workflow lain, default RELEASE atau gunakan input
+            # Jika dipanggil oleh workflow lain, gunakan input BUILD_STATUS atau default RELEASE
             if [ -z "${{ inputs.BUILD_STATUS }}" ]; then
                echo "STATUS=RELEASE" >> $GITHUB_ENV
             else
@@ -157,7 +157,7 @@ jobs:
           LAST_BUILD: ${{ inputs.LAST_BUILD }}
           TODO: ${{ inputs.TODO }}
           KVER: ${{ inputs.KERNEL_VERSION }}
-          STATUS: ${{ env.STATUS }} # Pass determined status to script
+          STATUS: ${{ env.STATUS }} # PENTING: Memastikan STATUS diteruskan ke build.sh
         run: |
           export GIT_CLONE_PROTECTION_ACTIVE=false
           chmod +x *.sh py/*.py
