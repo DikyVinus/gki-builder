@@ -33,7 +33,7 @@ on:
         options:
           - "None"
           - "Next"
-          - "All" # Tambahkan opsi "All" disini
+          - "All_Manager"
           - "Rissu"
           - "Biasa"
           - "SukiSU"
