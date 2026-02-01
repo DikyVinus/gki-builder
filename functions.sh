@@ -53,9 +53,9 @@ install_ksu() {
 # ksu_included() function
 # Type: bool
 ksu_included() {
-  # if variant is not nksu then
+  # if variant is not VNL then
   # kernelsu is included!
-  [ $VARIANT != "NKSU" ]
+  [ $VARIANT != "VNL" ]
   return $?
 }
 
@@ -63,13 +63,6 @@ ksu_included() {
 # Type: bool
 susfs_included() {
   [ $KSU_SUSFS == "true" ]
-  return $?
-}
-
-# ksu_manual_hook() function
-# Type: bool
-ksu_manual_hook() {
-  [[ $KSU_MANUAL_HOOK == "true" ]]
   return $?
 }
 
