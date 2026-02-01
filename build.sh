@@ -15,7 +15,6 @@ HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 KERNEL_DEFCONFIG="gki_defconfig"
-
 if [ "$KVER" == "6.6" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
   ANYKERNEL_BRANCH="android15-6.6"
@@ -59,14 +58,14 @@ LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
 
-# --- PATCH 500HZ (INSTALLED AT START) ---
+# --- PATCH 500HZ (DIPASANG DI AWAL) ---
 log "Applying 500Hz patch..."
 wget -qO Inject_500hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_500hz.sh
 bash Inject_500hz.sh
 rm Inject_500hz.sh
 # --------------------------------------
 
-# --- ADD SCRIPT INJECT KSU ---
+# --- TAMBAHKAN SCRIPT INJECT KSU ---
 log "Injecting custom KSU & SuSFS configs from GitHub..."
 export KSU
 export KSU_SUSFS
@@ -283,14 +282,13 @@ else
   KMI_CHECK="$WORKDIR/py/kmi-check-5.x.py"
 fi
 
-# PREPARE TEXT FOR RELEASE NOTES (Removed Markdown symbols to avoid Telegram errors)
 text=$(
   cat << EOF
-Linux Version: $LINUX_VERSION
-Build Date: $KBUILD_BUILD_TIMESTAMP
-KernelSU: ${KSU}
-SuSFS: $(susfs_included && echo "$SUSFS_VERSION" || echo "None")
-Compiler: $COMPILER_STRING
+🐧 *Linux Version*: $LINUX_VERSION
+📅 *Build Date*: $KBUILD_BUILD_TIMESTAMP
+📛 *KernelSU*: ${KSU}
+ඞ *SuSFS*: $(susfs_included && echo "$SUSFS_VERSION" || echo "None")
+🔰 *Compiler*: $COMPILER_STRING
 EOF
 )
 
@@ -358,11 +356,11 @@ cp $KERNEL_IMAGE .
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
-# --- PREPARE ARTIFACTS ---
-# Set BASE_NAME so the artifact name in GA does not error/empty
+# --- FIX ARTIFACTS: Selalu siapkan artifacts agar bisa di download di GitHub Action ---
+# Set BASE_NAME agar nama artifact di GA tidak error/kosong
 echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
 
-# Always move zip to artifacts folder (BETA and RELEASE)
+# Selalu pindahkan zip ke folder artifacts (BETA maupun RELEASE)
 mkdir -p $WORKDIR/artifacts
 mv $WORKDIR/*.zip $WORKDIR/artifacts
 # ---------------------------------------------------------------------------------------
@@ -376,35 +374,14 @@ if [ $LAST_BUILD == "true" ] && [ "$STATUS" != "BETA" ]; then
   ) >> $WORKDIR/artifacts/info.txt
 fi
 
-# --- UPLOAD LOGIC ---
-
 if [ "$STATUS" == "BETA" ]; then
-  # For BETA: Upload file to Telegram as usual (with fixed text)
   upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
   upload_file "$WORKDIR/build.log"
 else
-  # For RELEASE: 
-  # 1. Send simple success notification to Telegram (NO FILE UPLOAD)
-  # 2. Upload file to GitHub Releases
-  
-  # Send Telegram Notification (Plain text to avoid error)
-  send_msg "Build Succeeded: $KERNEL_NAME $RELEASE ($VARIANT). File uploaded to GitHub Releases."
-  
-  # Upload to GitHub Releases
-  log "Uploading to GitHub Releases: $GKI_RELEASES_REPO"
-  
-  # Check if release tag already exists to update or create new
-  if gh release view "$RELEASE" --repo "$GKI_RELEASES_REPO" > /dev/null 2>&1; then
-    log "Release $RELEASE exists. Uploading asset..."
-    gh release upload "$RELEASE" "$WORKDIR/artifacts/$AK3_ZIP_NAME" --repo "$GKI_RELEASES_REPO" --clobber
-  else
-    log "Creating new release $RELEASE..."
-    gh release create "$RELEASE" \
-      --repo "$GKI_RELEASES_REPO" \
-      --title "$KERNEL_NAME $RELEASE ($VARIANT)" \
-      --notes "$text" \
-      "$WORKDIR/artifacts/$AK3_ZIP_NAME"
-  fi
+  # --- FIX: UPLOAD ZIP KE TELEGRAM UNTUK RELEASE BESERTA INFO VERSI ---
+  upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
+  # Jika ingin upload log juga untuk release, tambahkan baris di bawah:
+  # upload_file "$WORKDIR/build.log"
 fi
 
 exit 0
