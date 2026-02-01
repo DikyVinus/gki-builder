@@ -14,7 +14,7 @@ USER="Dev-BoltX"
 HOST="BoltX"
 TIMEZONE="Asia/jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-KERNEL_DEFCONFIG="quartix_defconfig"
+KERNEL_DEFCONFIG="gki_defconfig"
 if [ "$KVER" == "6.6" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
   ANYKERNEL_BRANCH="android15-6.6"
