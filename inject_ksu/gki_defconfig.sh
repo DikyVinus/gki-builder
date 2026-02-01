@@ -90,3 +90,17 @@ CONFIG_UCLAMP_TASK_GROUP=y
 CONFIG_NO_HZ=n
 CONFIG_SCHED_TUNE=y
 EOF
+
+# --- Tambahan LTO & Compiler Optimization ---
+echo "⚙️ Menambahkan LTO & Compiler Optimization"
+cat >> $DEFCONFIG <<EOF
+# --- LTO & Compiler Optimization ---
+CONFIG_LTO=y
+CONFIG_LTO_CLANG=y
+CONFIG_ARCH_SUPPORTS_LTO_CLANG=y
+CONFIG_ARCH_SUPPORTS_LTO_CLANG_THIN=y
+CONFIG_HAS_LTO_CLANG=y
+# CONFIG_LTO_NONE is not set
+# CONFIG_LTO_CLANG_FULL is not set
+CONFIG_LTO_CLANG_THIN=y
+EOF
