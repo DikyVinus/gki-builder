@@ -378,7 +378,10 @@ if [ "$STATUS" == "BETA" ]; then
   upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
   upload_file "$WORKDIR/build.log"
 else
-  send_msg "✅ Build Succeeded for $VARIANT variant."
+  # --- FIX: UPLOAD ZIP KE TELEGRAM UNTUK RELEASE BESERTA INFO VERSI ---
+  upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
+  # Jika ingin upload log juga untuk release, tambahkan baris di bawah:
+  # upload_file "$WORKDIR/build.log"
 fi
 
 exit 0
