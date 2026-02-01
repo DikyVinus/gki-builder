@@ -238,7 +238,7 @@ fi
 # set localversion
 if [ $TODO == "kernel" ]; then
   LATEST_COMMIT_HASH=$(git rev-parse --short HEAD)
-  if [ $STATUS == "BETA" ]; then
+  if [ "$STATUS" == "BETA" ]; then
     SUFFIX="$LATEST_COMMIT_HASH"
   else
     SUFFIX="${RELEASE}@${LATEST_COMMIT_HASH}"
@@ -334,7 +334,7 @@ log "Cloning anykernel from $(simplify_gh_url "$ANYKERNEL_REPO")"
 git clone -q --depth=1 $ANYKERNEL_REPO -b $ANYKERNEL_BRANCH anykernel
 
 # Set kernel string in anykernel
-if [ $STATUS == "BETA" ]; then
+if [ "$STATUS" == "BETA" ]; then
   BUILD_DATE=$(date -d "$KBUILD_BUILD_TIMESTAMP" +"%Y%m%d-%H%M")
   AK3_ZIP_NAME=${AK3_ZIP_NAME//BUILD_DATE/$BUILD_DATE}
   AK3_ZIP_NAME=${AK3_ZIP_NAME//-REL/}
@@ -356,13 +356,16 @@ cp $KERNEL_IMAGE .
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
-if [ $STATUS != "BETA" ]; then
-  echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
-  mkdir -p $WORKDIR/artifacts
-  mv $WORKDIR/*.zip $WORKDIR/artifacts
-fi
+# --- FIX ARTIFACTS: Selalu siapkan artifacts agar bisa di download di GitHub Action ---
+# Set BASE_NAME agar nama artifact di GA tidak error/kosong
+echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
 
-if [ $LAST_BUILD == "true" ] && [ $STATUS != "BETA" ]; then
+# Selalu pindahkan zip ke folder artifacts (BETA maupun RELEASE)
+mkdir -p $WORKDIR/artifacts
+mv $WORKDIR/*.zip $WORKDIR/artifacts
+# ---------------------------------------------------------------------------------------
+
+if [ $LAST_BUILD == "true" ] && [ "$STATUS" != "BETA" ]; then
   (
     echo "LINUX_VERSION=$LINUX_VERSION"
     echo "SUSFS_VERSION=$(curl -s https://gitlab.com/simonpunk/susfs4ksu/raw/gki-android15-6.6/kernel_patches/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g')"
@@ -371,8 +374,8 @@ if [ $LAST_BUILD == "true" ] && [ $STATUS != "BETA" ]; then
   ) >> $WORKDIR/artifacts/info.txt
 fi
 
-if [ $STATUS == "BETA" ]; then
-  upload_file "$WORKDIR/$AK3_ZIP_NAME" "$text"
+if [ "$STATUS" == "BETA" ]; then
+  upload_file "$WORKDIR/artifacts/$AK3_ZIP_NAME" "$text"
   upload_file "$WORKDIR/build.log"
 else
   send_msg "✅ Build Succeeded for $VARIANT variant."
