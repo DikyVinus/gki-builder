@@ -16,9 +16,9 @@ TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 KERNEL_DEFCONFIG="gki_defconfig"
 if [ "$KVER" == "6.6" ]; then
-  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
+  KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-6.6.git"
   ANYKERNEL_BRANCH="android15-6.6"
-  KERNEL_BRANCH="android15-6.6-2025-01"
+  KERNEL_BRANCH="android15-6.6.56-2024-11"
 elif [ "$KVER" == "6.1" ]; then
   KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-6.1"
   ANYKERNEL_BRANCH="android14-6.1"
@@ -58,14 +58,14 @@ LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
 
-# --- PATCH 500HZ (DIPASANG DI AWAL) ---
+# --- PATCH 500HZ (INSTALLED AT THE BEGINNING) ---
 log "Applying 500Hz patch..."
 wget -qO Inject_500hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_500hz.sh
 bash Inject_500hz.sh
 rm Inject_500hz.sh
 # --------------------------------------
 
-# --- TAMBAHKAN SCRIPT INJECT KSU ---
+# --- ADD KSU INJECT SCRIPT ---
 log "Injecting custom KSU & SuSFS configs from GitHub..."
 export KSU
 export KSU_SUSFS
