@@ -309,7 +309,7 @@ if [ "$DEFCONFIG_TO_MERGE" ]; then
 fi
 
 # Upload defconfig if we are doing defconfig
-if [ "$TODO" == "defconfig" ]; then
+if [ $TODO == "defconfig" ]; then
   log "Uploading defconfig..."
   upload_file $OUTDIR/.config
   exit 0
