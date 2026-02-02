@@ -95,7 +95,7 @@ jobs:
         env:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }} # telegram chat id
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }} # telegram bot token
-          # GH_TOKEN check dihapus karena tidak digunakan untuk release
+          GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
@@ -112,6 +112,9 @@ jobs:
           fi
           if [[ -z "$TG_BOT_TOKEN" ]]; then
             _error "Missing TG_BOT_TOKEN secret (Telegram Bot Token)"
+          fi
+          if [[ -z "$GH_TOKEN" ]]; then
+            _error "Missing GH_TOKEN secret (GitHub PAT)"
           fi
 
           # KernelSU & SuSFS Validation
@@ -146,8 +149,9 @@ jobs:
 
       - name: Run Build Script
         env:
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }} # telegram chat id
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }} # telegram bot token
+          GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
           STATUS: ${{ env.STATUS }}
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
@@ -161,18 +165,14 @@ jobs:
           ./build.sh
 
       - name: Upload Artifacts (ZIP & IMG)
-        # Mengupload zip dari folder artifacts (Release) maupun root (BETA)
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel-Build-${{ env.STATUS }}-${{ github.run_number }}
+          name: ${{ env.BASE_NAME }}-${{ github.run_number }}
           path: |
             artifacts/*.zip
             artifacts/*.img
-            *.zip # Tambahan untuk menangkap file zip mode BETA yang ada di root
 
       - name: Upload Artifacts (Info File)
-        # Info file hanya dibuat saat Release/BETA dengan LAST_BUILD=true
-        if: hashFiles('artifacts/*.txt') != ''
         uses: actions/upload-artifact@v4
         with:
           name: info-${{ github.run_number }}
