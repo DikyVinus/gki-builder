@@ -30,7 +30,7 @@ elif [ "$KVER" == "5.10" ]; then
   KERNEL_BRANCH="android12-5.10-staging"
 fi
 DEFCONFIG_TO_MERGE=""
-GKI_RELEASES_REPO="https://github.com/Kingfinik98/Kernel-Release"
+GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
 CLANG_URL="$(./clang.sh slim)"
 CLANG_BRANCH=""
@@ -181,7 +181,7 @@ if ksu_included; then
   if [ "$KSU" == "Next" ] || [ "$KSU" == "All_Manager" ]; then
     log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
     # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
-    # This fixes the linker error caused by missing functions in current SUSFS patch
+    # This fixes the linker error caused by missing functions in the current SUSFS patch
     sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
     log "SUSFS symbol fix applied for KernelSU-Next."
   fi
@@ -356,17 +356,11 @@ cp $KERNEL_IMAGE .
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
-# Move zip to artifacts if RELEASE (Alur asli)
 if [ "$STATUS" != "BETA" ]; then
   echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
   mkdir -p $WORKDIR/artifacts
   mv $WORKDIR/*.zip $WORKDIR/artifacts
 fi
-
-# -------------------------------------------------
-# Bagian Upload ke GitHub Releases DIHAPUS
-# Fokus rilis sekarang kembali ke Telegram Bot
-# -------------------------------------------------
 
 if [ "$LAST_BUILD" == "true" ] && [ "$STATUS" != "BETA" ]; then
   (
