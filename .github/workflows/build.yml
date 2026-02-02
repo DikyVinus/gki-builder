@@ -95,7 +95,7 @@ jobs:
         env:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }} # telegram chat id
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }} # telegram bot token
-          GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token (Dibutuhkan untuk upload release)
+          # GH_TOKEN check dihapus karena tidak digunakan untuk release
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
@@ -112,9 +112,6 @@ jobs:
           fi
           if [[ -z "$TG_BOT_TOKEN" ]]; then
             _error "Missing TG_BOT_TOKEN secret (Telegram Bot Token)"
-          fi
-          if [[ -z "$GH_TOKEN" ]]; then
-            _error "Missing GH_TOKEN secret (GitHub PAT - Dibutuhkan untuk upload rilis)"
           fi
 
           # KernelSU & SuSFS Validation
@@ -151,7 +148,6 @@ jobs:
         env:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           STATUS: ${{ env.STATUS }}
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
