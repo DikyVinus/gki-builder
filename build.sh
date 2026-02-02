@@ -30,7 +30,7 @@ elif [ "$KVER" == "5.10" ]; then
   KERNEL_BRANCH="android12-5.10-staging"
 fi
 DEFCONFIG_TO_MERGE=""
-GKI_RELEASES_REPO="https://github.com/Kingfinik98/BoltX-Release"
+GKI_RELEASES_REPO="https://github.com/Kingfinik98/Kernel-Release"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
 CLANG_URL="$(./clang.sh slim)"
 CLANG_BRANCH=""
