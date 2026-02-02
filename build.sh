@@ -181,7 +181,7 @@ if ksu_included; then
   if [ "$KSU" == "Next" ] || [ "$KSU" == "All_Manager" ]; then
     log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
     # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
-    # This fixes the linker error caused by missing functions in the current SUSFS patch
+    # This fixes the linker error caused by missing functions in current SUSFS patch
     sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
     log "SUSFS symbol fix applied for KernelSU-Next."
   fi
@@ -363,32 +363,9 @@ if [ "$STATUS" != "BETA" ]; then
   mv $WORKDIR/*.zip $WORKDIR/artifacts
 fi
 
-# --- UPLOAD KE GITHUB RELEASES (BETA & RELEASE) ---
-log "🚀 Uploading to GitHub Releases ($RELEASE)..."
-
-# Tentukan path file zip berdasarkan status
-if [ "$STATUS" == "BETA" ]; then
-  ZIP_TARGET="$WORKDIR/$AK3_ZIP_NAME"
-else
-  ZIP_TARGET="$WORKDIR/artifacts/$AK3_ZIP_NAME"
-fi
-
-# Cek atau buat release
-if ! gh release view "$RELEASE" --repo "$GKI_RELEASES_REPO" > /dev/null 2>&1; then
-  log "Creating new release $RELEASE..."
-  gh release create "$RELEASE" \
-    --repo "$GKI_RELEASES_REPO" \
-    --title "$KERNEL_NAME $RELEASE" \
-    --notes "$text" \
-    --latest
-else
-  log "Release $RELEASE exists. Updating assets..."
-fi
-
-# Upload file
-gh release upload "$RELEASE" "$ZIP_TARGET" \
-  --repo "$GKI_RELEASES_REPO" \
-  --clobber
+# -------------------------------------------------
+# Bagian Upload ke GitHub Releases DIHAPUS
+# Fokus rilis sekarang kembali ke Telegram Bot
 # -------------------------------------------------
 
 if [ "$LAST_BUILD" == "true" ] && [ "$STATUS" != "BETA" ]; then
