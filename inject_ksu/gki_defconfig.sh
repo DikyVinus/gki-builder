@@ -81,9 +81,10 @@ CONFIG_CPU_FREQ=y
 CONFIG_HIGH_RES_TIMERS=y
 EOF
 
-# --- Tambahan LTO & Compiler Optimization ---
-echo "⚙️ Menambahkan LTO & Compiler Optimization"
-cat >> $DEFCONFIG <<EOF
+# --- Tambahan LTO & Compiler Optimization (KHUSUS 5.10) ---
+if [ "$KVER" == "5.10" ]; then
+  echo "⚙️ Menambahkan LTO & Compiler Optimization (Khusus KVER 5.10)"
+  cat >> $DEFCONFIG <<EOF
 # --- LTO & Compiler Optimization ---
 CONFIG_LTO=y
 CONFIG_LTO_CLANG=y
@@ -94,3 +95,6 @@ CONFIG_HAS_LTO_CLANG=y
 # CONFIG_LTO_CLANG_FULL is not set
 CONFIG_LTO_CLANG_THIN=y
 EOF
+else
+  echo "⚙️ LTO Optimization dilewati (Untuk KVER 6.1 & 6.6)"
+fi
