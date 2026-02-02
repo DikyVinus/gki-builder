@@ -80,17 +80,3 @@ CONFIG_HZ_500=y
 CONFIG_CPU_FREQ=y
 CONFIG_HIGH_RES_TIMERS=y
 EOF
-
-# --- Tambahan LTO & Compiler Optimization ---
-echo "⚙️ Menambahkan LTO & Compiler Optimization"
-cat >> $DEFCONFIG <<EOF
-# --- LTO & Compiler Optimization ---
-CONFIG_LTO=y
-CONFIG_LTO_CLANG=y
-CONFIG_ARCH_SUPPORTS_LTO_CLANG=y
-CONFIG_ARCH_SUPPORTS_LTO_CLANG_THIN=y
-CONFIG_HAS_LTO_CLANG=y
-# CONFIG_LTO_NONE is not set
-# CONFIG_LTO_CLANG_FULL is not set
-CONFIG_LTO_CLANG_THIN=y
-EOF
