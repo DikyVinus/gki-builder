@@ -1,5 +1,6 @@
 ## Fork & Credit Notice
-Buold Gki Android 12.5.10 Android 14 6.1 Android 15.6.6
+Build Gki Android 12.5.10 Android 14 6.1 Android 15.6.6
+
 If you fork this repository, please provide proper credit to the original source.
 
 Fixing bugs and maintaining this kernel build requires significant time and effort.  
