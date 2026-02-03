@@ -9,12 +9,22 @@ elif [ "$KVER" == "5.10" ]; then
 elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
+
 KERNEL_NAME="BX-Enfiled"
 USER="Dev-BoltX"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
 ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
-KERNEL_DEFCONFIG="gki_defconfig"
+
+# Fixed Logic: 5.10 & 6.1 use gki_defconfig, others use quartix_defconfig
+if [ "$KVER" == "5.10" ]; then
+  KERNEL_DEFCONFIG="gki_defconfig"
+elif [ "$KVER" == "6.1" ]; then
+  KERNEL_DEFCONFIG="gki_defconfig"
+else
+  KERNEL_DEFCONFIG="quartix_defconfig"
+fi
+
 if [ "$KVER" == "6.6" ]; then
   KERNEL_REPO="https://github.com/linastorvaldz/kernel-android15-6.6"
   ANYKERNEL_BRANCH="android15-6.6"
