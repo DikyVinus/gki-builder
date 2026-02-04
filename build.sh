@@ -18,7 +18,7 @@ ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 
 # Fixed Logic: 5.10 & 6.1 use gki_defconfig, others use quartix_defconfig
 if [ "$KVER" == "5.10" ]; then
-  KERNEL_DEFCONFIG="gki_defconfig"
+  KERNEL_DEFCONFIG="otag_defconfig"
 elif [ "$KVER" == "6.1" ]; then
   KERNEL_DEFCONFIG="gki_defconfig"
 else
@@ -202,14 +202,13 @@ elif [ "$KSU" == "resukisu" ]; then
     cp -r $susfs/include .
     cp -r $susfs/50_add_susfs_in_${SUSFS_BRANCH}.patch .
     patch -p1 < 50_add_susfs_in_${SUSFS_BRANCH}.patch || true
-    
     # Ambil versi SUSFS untuk info build
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
     config --enable CONFIG_KSU_SUSFS
     log "[✓] ReSukiSU & SUSFS patched for $KVER."
   else
-    # Untuk 6.1 dan 6.6, kita hanya enable config-nya.
-    # Patching fisiknya dilakukan di blok 'Standard SUSFS Logic' di bawah.
+    # Untuk 6.1 dan 6.6,hanya enable config-nya.
+    # The physical patching is done in the 'Standard SUSFS Logic' block below.
     config --enable CONFIG_KSU_SUSFS
     log "SUSFS config enabled for $KVER. Applying patches in Standard block..."
   fi
