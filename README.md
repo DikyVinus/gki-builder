@@ -6,7 +6,8 @@ If you fork this repository, please provide proper credit to the original source
 Fixing bugs and maintaining this kernel build requires significant time and effort.  
 Do **not** claim that you are the author of the GitHub Actions / YML scripts or this kernel build.
 
-it is forbidden to claim other people's work 
+it is forbidden to claim other people's work
+
 Read: For GKI 5.10 use clang 12, for GKI 6.1 and 6.6 use clang 21
 ### Bug Fixes
 - Fixed and maintained by **[@BoltXNext](https://github.com/Kingfinik98)**
