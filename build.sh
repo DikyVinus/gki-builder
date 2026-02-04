@@ -183,43 +183,45 @@ if ksu_included; then
 
 # --- ReSukiSU Setup Block (Separated Logic) ---
 elif [ "$KSU" == "resukisu" ]; then
-  log "Setting up ReSukiSU & SUSFS for KVER $KVER..."
+  log "Setting up ReSukiSU for KVER $KVER..."
   
-  # Tentukan branch SUSFS berdasarkan versi kernel (Support 5.10, 6.1, 6.6)
-  if [ "$KVER" == "6.6" ]; then
-    SUSFS_BRANCH="gki-android15-6.6"
-  elif [ "$KVER" == "6.1" ]; then
-    SUSFS_BRANCH="gki-android14-6.1"
-  elif [ "$KVER" == "5.10" ]; then
-    SUSFS_BRANCH="gki-android12-5.10"
-  fi
-
   # Jalankan script setup ReSukiSU (using branch main)
   log "Running ReSukiSU setup from main branch..."
   curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
   
-  # Clone SUSFS dengan branch yang dinamis
-  log "Cloning SUSFS patches for branch $SUSFS_BRANCH..."
-  git clone https://gitlab.com/simonpunk/susfs4ksu/ -b $SUSFS_BRANCH sus
-  rm -rf sus/.git
-  susfs=sus/kernel_patches
-  cp -r $susfs/fs .
-  cp -r $susfs/include .
-  cp -r $susfs/50_add_susfs_in_${SUSFS_BRANCH}.patch .
-  patch -p1 < 50_add_susfs_in_${SUSFS_BRANCH}.patch || true
-  
-  # Ambil versi SUSFS untuk info build
-  SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
-  config --enable CONFIG_KSU_SUSFS
-  log "[✓] ReSukiSU & SUSFS patched for $KVER."
+  # Logika Patch SUSFS untuk ReSukiSU:
+  # 5.10: Gunakan metode terpisah (clone di dalam blok ini).
+  # 6.1 & 6.6: Lewati patch di sini, biarkan diambil alih oleh blok Standard SUSFS di bawah (agar pakai patch manual lokal).
+  if [ "$KVER" == "5.10" ]; then
+    log "Applying SUSFS patches for GKI 5.10 (ReSukiSU Method)..."
+    SUSFS_BRANCH="gki-android12-5.10"
+    git clone https://gitlab.com/simonpunk/susfs4ksu/ -b $SUSFS_BRANCH sus
+    rm -rf sus/.git
+    susfs=sus/kernel_patches
+    cp -r $susfs/fs .
+    cp -r $susfs/include .
+    cp -r $susfs/50_add_susfs_in_${SUSFS_BRANCH}.patch .
+    patch -p1 < 50_add_susfs_in_${SUSFS_BRANCH}.patch || true
+    
+    # Ambil versi SUSFS untuk info build
+    SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
+    config --enable CONFIG_KSU_SUSFS
+    log "[✓] ReSukiSU & SUSFS patched for $KVER."
+  else
+    # Untuk 6.1 dan 6.6, kita hanya enable config-nya.
+    # Patching fisiknya dilakukan di blok 'Standard SUSFS Logic' di bawah.
+    config --enable CONFIG_KSU_SUSFS
+    log "SUSFS config enabled for $KVER. Applying patches in Standard block..."
+  fi
 fi
 
-# SUSFS (Standard Logic for KernelSU yes)
+# SUSFS (Standard Logic for KernelSU yes & ReSukiSU 6.1/6.6)
 if susfs_included; then
-  # Cegah patch ganda jika sudah pakai ReSukiSU
-  if [ "$KSU" != "resukisu" ]; then
+  # Cek: Jalankan patch Standard jika BUKAN ReSukiSU (KernelSU Biasa)
+  # ATAU jika ReSukiSU tapi versinya 6.1 atau 6.6.
+  if [ "$KSU" != "resukisu" ] || ([ "$KSU" == "resukisu" ] && ([ "$KVER" == "6.1" ] || [ "$KVER" == "6.6" ])); then
     # Kernel-side
-    log "Applying kernel-side susfs patches (Standard)"
+    log "Applying kernel-side susfs patches (Standard Method)"
     SUSFS_DIR="$WORKDIR/susfs"
     SUSFS_PATCHES="${SUSFS_DIR}/kernel_patches"
     if [ "$KVER" == "6.6" ]; then
@@ -239,6 +241,7 @@ if susfs_included; then
     elif [ $(echo "$LINUX_VERSION_CODE" | head -c4) -eq 6658 ]; then
       patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix-k6.6.58.patch
     elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
+      # Ini patch yang memperbaiki GKI 6.1
       patch -p1 < $KERNEL_PATCHES/susfs/fs_proc_base.c-fix-k6.1.patch
     elif [ $(echo "$LINUX_VERSION_CODE" | head -c3) -eq 510 ]; then
       patch -p1 < $KERNEL_PATCHES/susfs/pershoot-susfs-k5.10.patch
@@ -249,8 +252,8 @@ if susfs_included; then
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
     config --enable CONFIG_KSU_SUSFS
   else
-    # Jika ReSukiSU, SUSFS sudah di-enable di blok atas
-    log "Skipping standard SUSFS patch (Handled by ReSukiSU)."
+    # Jika ReSukiSU 5.10, SUSFS sudah di-enable di blok atas
+    log "Skipping standard SUSFS patch (Handled by ReSukiSU or logic elsewhere)."
   fi
 else
   config --disable CONFIG_KSU_SUSFS
