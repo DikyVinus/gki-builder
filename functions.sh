@@ -53,16 +53,19 @@ install_ksu() {
 # ksu_included() function
 # Type: bool
 ksu_included() {
-  # if variant is not VNL then
-  # kernelsu is included!
-  [ $VARIANT != "VNL" ]
+  # LOGIC FIX:
+  # check the $KSU input variable directly to avoid conflict with ReSukiSU.
+  # 1. "no" (Vanilla/VNL) -> Return False (Kernel is not KSU patched) -> Vanilla is safe.
+  # 2. "yes" (Standard) -> Return True (Enter the Standard KSU block).
+  # 3. "resukisu" -> Return False (To skip and enter the ReSukiSU elif block in build.sh).
+  [ "$KSU" == "yes" ]
   return $?
 }
 
 # susfs_included() function
 # Type: bool
 susfs_included() {
-  [ $KSU_SUSFS == "true" ]
+  [ "$KSU_SUSFS" == "true" ]
   return $?
 }
 
