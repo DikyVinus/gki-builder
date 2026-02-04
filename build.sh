@@ -202,17 +202,14 @@ elif [ "$KSU" == "resukisu" ]; then
     cp -r $susfs/include .
     cp -r $susfs/50_add_susfs_in_${SUSFS_BRANCH}.patch .
     patch -p1 < 50_add_susfs_in_${SUSFS_BRANCH}.patch || true
-    
-    # Ambil versi SUSFS untuk info build
+    # Get SUSFS version for build info
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
-    config --enable CONFIG_KSU_SUSFS
-    # TAMBAHKAN CONFIG_KPM=y KHUSUS UNTUK GKI 5.10
-    log "🔧 Enabling CONFIG_KPM for GKI 5.10 (ReSukiSU)..."
     config --enable CONFIG_KPM
+    config --enable CONFIG_KSU_SUSFS
     log "[✓] ReSukiSU & SUSFS patched for $KVER."
   else
-    # Untuk 6.1 dan 6.6, kita hanya enable config-nya.
-    # Patching fisiknya dilakukan di blok 'Standard SUSFS Logic' di bawah.
+    # Untuk 6.1 dan 6.6,hanya enable config-nya.
+    # The physical patching is done in the 'Standard SUSFS Logic' block below.
     config --enable CONFIG_KSU_SUSFS
     log "SUSFS config enabled for $KVER. Applying patches in Standard block..."
   fi
@@ -220,8 +217,8 @@ fi
 
 # SUSFS (Standard Logic for KernelSU yes & ReSukiSU 6.1/6.6)
 if susfs_included; then
-  # Cek: Jalankan patch Standard jika BUKAN ReSukiSU (KernelSU Biasa)
-  # ATAU jika ReSukiSU tapi versinya 6.1 atau 6.6.
+  # Check: Run the Standard patch if it is NOT ReSukiSU (Standard KernelSU)
+# OR if it is ReSukiSU but its version is 6.1 or 6.6.
   if [ "$KSU" != "resukisu" ] || ([ "$KSU" == "resukisu" ] && ([ "$KVER" == "6.1" ] || [ "$KVER" == "6.6" ])); then
     # Kernel-side
     log "Applying kernel-side susfs patches (Standard Method)"
@@ -255,7 +252,7 @@ if susfs_included; then
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
     config --enable CONFIG_KSU_SUSFS
   else
-    # Jika ReSukiSU 5.10, SUSFS sudah di-enable di blok atas
+    #  ReSukiSU 5.10, SUSFS is enabled in the top block
     log "Skipping standard SUSFS patch (Handled by ReSukiSU or logic elsewhere)."
   fi
 else
@@ -330,7 +327,7 @@ if [ "$DEFCONFIG_TO_MERGE" ]; then
       make ${MAKE_ARGS[@]} scripts/kconfig/merge_config.sh $config
     done
   else
-    error "scripts/kconfig/merge_config.sh does not exist in kernel source"
+    error "scripts/kconfig/merge_config.sh does not exist in the kernel source"
   fi
   make ${MAKE_ARGS[@]} olddefconfig
 fi
@@ -353,20 +350,11 @@ else
   $KMI_CHECK "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS" || true
 fi
 
-# --- PATCH KPM SECTION (FIXED FOR GKI 5.10) ---
+# --- PATCH KPM SECTION (Adjusted for build.sh) ---
 # Letakkan setelah build selesai, sebelum zipping
 log "Applying KPM Patch..."
 # Masuk ke direktori output kernel Image
 cd $OUTDIR/arch/arm64/boot
-
-# GKI 5.10 Special Handling: Decompress Image.gz if present
-if [ "$KVER" == "5.10" ]; then
-  if [ -f Image.gz ]; then
-    log "🔧 GKI 5.10 Detected: Decompressing Image.gz to Image..."
-    gunzip -kf Image.gz
-  fi
-fi
-
 if [ -f Image ]; then
   echo "✅ Image found, applying KPM patch..."
   curl -LSs "https://github.com/Kingfinik98/SukiSU_patch/raw/refs/heads/main/kpm/patch_linux" -o patch
@@ -377,15 +365,10 @@ if [ -f Image ]; then
     ls -lh Image
     log "✅ KPM Patch applied successfully."
   else
-    # Fallback: If oImage not found, check if Image was modified in-place
-    # Some patchers overwrite file directly instead of creating oImage
-    log "⚠️ oImage not found. Checking if Image was modified in-place."
-    ls -lh Image
-    log "⚠️ If no error appeared above, KPM patch might have been applied to Image directly."
+    log "Error: oImage not found!"
   fi
 else
   log "Warning: Image file not found in $PWD. Skipping KPM patch."
-  ls -lh .
 fi
 # Kembali ke direktori kerja awal (Post-compiling steps)
 cd $WORKDIR
