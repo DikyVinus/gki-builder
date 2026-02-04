@@ -8,7 +8,7 @@ Do **not** claim that you are the author of the GitHub Actions / YML scripts or 
 
 it is forbidden to claim other people's work
 
-Read: For GKI 5.10 use clang 12, for GKI 6.1 and 6.6 use clang 21 , 22
+Read: For GKI 5.10 use clang 12,19,20,22 for GKI 6.1 and 6.6 use clang 19,  21 , 22
 remove the (#) sign from the Clang text :CLANG_URL to replace clang 
 ### Bug Fixes
 - Fixed and maintained by **[@BoltXNext](https://github.com/Kingfinik98)**
