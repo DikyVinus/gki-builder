@@ -27,13 +27,13 @@ on:
           - "defconfig"
 
       KSU:
-        description: KernelSU
-        default: ""
+        description: KernelSU Type
+        default: "yes"
         type: choice
         options:
           - "no"
           - "yes"
-
+          - "resukisu"
       KSU_SUSFS:
         description: Include SUSFS?
         default: "false"
@@ -109,7 +109,7 @@ jobs:
             _error "Missing GH_TOKEN secret (GitHub PAT)"
           fi
 
-          # KernelSU
+          # KernelSU Validation (Supports yes, no, resukisu)
           if [[ $KSU == "no" && $KSU_SUSFS == "true" ]]; then
               _error "Cannot use SuSFS without KernelSU"
           fi
@@ -149,7 +149,7 @@ jobs:
           KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
           LAST_BUILD: ${{ inputs.LAST_BUILD }}
           TODO: ${{ inputs.TODO }}
-          KVER: ${{ inputs.KERNEL_VERSION }}
+          KVER: ${{ inputs.KERNEL_VERSION }} # This passes the kernel version to the script for Infinix patches
         run: |
           export GIT_CLONE_PROTECTION_ACTIVE=false
           chmod +x *.sh py/*.py
