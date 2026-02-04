@@ -41,8 +41,8 @@ fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/Builder"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
-CLANG_URL="https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/archive/refs/heads/lineage-20.0.tar.gz"
-#CLANG_URL="$(./clang.sh slim)"
+#CLANG_URL="https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/archive/refs/heads/lineage-20.0.tar.gz"
+CLANG_URL="$(./clang.sh slim)"
 CLANG_BRANCH=""
 AK3_ZIP_NAME="$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
 OUTDIR="$WORKDIR/out"
@@ -202,13 +202,17 @@ elif [ "$KSU" == "resukisu" ]; then
     cp -r $susfs/include .
     cp -r $susfs/50_add_susfs_in_${SUSFS_BRANCH}.patch .
     patch -p1 < 50_add_susfs_in_${SUSFS_BRANCH}.patch || true
+    
     # Ambil versi SUSFS untuk info build
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
     config --enable CONFIG_KSU_SUSFS
+    # TAMBAHKAN CONFIG_KPM=y KHUSUS UNTUK GKI 5.10
+    log "🔧 Enabling CONFIG_KPM for GKI 5.10 (ReSukiSU)..."
+    config --enable CONFIG_KPM
     log "[✓] ReSukiSU & SUSFS patched for $KVER."
   else
-    # Untuk 6.1 dan 6.6,hanya enable config-nya.
-    # The physical patching is done in the 'Standard SUSFS Logic' block below.
+    # Untuk 6.1 dan 6.6, kita hanya enable config-nya.
+    # Patching fisiknya dilakukan di blok 'Standard SUSFS Logic' di bawah.
     config --enable CONFIG_KSU_SUSFS
     log "SUSFS config enabled for $KVER. Applying patches in Standard block..."
   fi
@@ -326,7 +330,7 @@ if [ "$DEFCONFIG_TO_MERGE" ]; then
       make ${MAKE_ARGS[@]} scripts/kconfig/merge_config.sh $config
     done
   else
-    error "scripts/kconfig/merge_config.sh does not exist in the kernel source"
+    error "scripts/kconfig/merge_config.sh does not exist in kernel source"
   fi
   make ${MAKE_ARGS[@]} olddefconfig
 fi
@@ -349,11 +353,20 @@ else
   $KMI_CHECK "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS" || true
 fi
 
-# --- PATCH KPM SECTION (Adjusted for build.sh) ---
+# --- PATCH KPM SECTION (FIXED FOR GKI 5.10) ---
 # Letakkan setelah build selesai, sebelum zipping
 log "Applying KPM Patch..."
 # Masuk ke direktori output kernel Image
 cd $OUTDIR/arch/arm64/boot
+
+# GKI 5.10 Special Handling: Decompress Image.gz if present
+if [ "$KVER" == "5.10" ]; then
+  if [ -f Image.gz ]; then
+    log "🔧 GKI 5.10 Detected: Decompressing Image.gz to Image..."
+    gunzip -kf Image.gz
+  fi
+fi
+
 if [ -f Image ]; then
   echo "✅ Image found, applying KPM patch..."
   curl -LSs "https://github.com/Kingfinik98/SukiSU_patch/raw/refs/heads/main/kpm/patch_linux" -o patch
@@ -364,10 +377,15 @@ if [ -f Image ]; then
     ls -lh Image
     log "✅ KPM Patch applied successfully."
   else
-    log "Error: oImage not found!"
+    # Fallback: If oImage not found, check if Image was modified in-place
+    # Some patchers overwrite file directly instead of creating oImage
+    log "⚠️ oImage not found. Checking if Image was modified in-place."
+    ls -lh Image
+    log "⚠️ If no error appeared above, KPM patch might have been applied to Image directly."
   fi
 else
   log "Warning: Image file not found in $PWD. Skipping KPM patch."
+  ls -lh .
 fi
 # Kembali ke direktori kerja awal (Post-compiling steps)
 cd $WORKDIR
