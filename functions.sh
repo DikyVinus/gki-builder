@@ -54,10 +54,10 @@ install_ksu() {
 # Type: bool
 ksu_included() {
   # LOGIC FIX:
-  # check the $KSU input variable directly to avoid conflict with ReSukiSU.
-  # 1. "no" (Vanilla/VNL) -> Return False (Kernel is not KSU patched) -> Vanilla is safe.
-  # 2. "yes" (Standard) -> Return True (Enter the Standard KSU block).
-  # 3. "resukisu" -> Return False (To skip and enter the ReSukiSU elif block in build.sh).
+  # Cek variabel input $KSU secara langsung.
+  # 1. "yes" (Standard KSU) -> Return True (Masuk blok Standard).
+  # 2. "resukisu" -> Return False (Lewati Standard, masuk blok ReSukiSU).
+  # 3. "no" (Vanilla) -> Return False (Tidak ada KSU).
   [ "$KSU" == "yes" ]
   return $?
 }
@@ -65,6 +65,9 @@ ksu_included() {
 # susfs_included() function
 # Type: bool
 susfs_included() {
+  # Return True jika input KSU_SUSFS adalah "true"
+  # Ini digunakan oleh build.sh untuk memutuskan apakah akan clone SUSFS (Standard/Manual Fix)
+  # atau membiarkan ReSukiSU menangani patchingnya sendiri.
   [ "$KSU_SUSFS" == "true" ]
   return $?
 }
