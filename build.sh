@@ -18,7 +18,7 @@ ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 
 # Fixed Logic: 5.10 & 6.1 use gki_defconfig, others use quartix_defconfig
 if [ "$KVER" == "5.10" ]; then
-  KERNEL_DEFCONFIG="otag_defconfig"
+  KERNEL_DEFCONFIG="gki_defconfig"
 elif [ "$KVER" == "6.1" ]; then
   KERNEL_DEFCONFIG="gki_defconfig"
 else
@@ -34,14 +34,15 @@ elif [ "$KVER" == "6.1" ]; then
   ANYKERNEL_BRANCH="android14-6.1"
   KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
-  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10"
+  KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-5.10.git"
   ANYKERNEL_BRANCH="android12-5.10"
-  KERNEL_BRANCH="master"
+  KERNEL_BRANCH="android12-5.10-staging"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/Builder"
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
-CLANG_URL="https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/archive/refs/heads/lineage-20.0.tar.gz"
+#CLANG_URL="https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/archive/refs/heads/lineage-20.0.tar.gz"
+CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main-kernel-2025/clang-r536225.tar.gz"
 #CLANG_URL="$(./clang.sh slim)"
 CLANG_BRANCH=""
 AK3_ZIP_NAME="$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
