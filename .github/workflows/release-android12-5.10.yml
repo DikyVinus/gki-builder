@@ -11,6 +11,8 @@ jobs:
           - { name: "VNL", KSU: "no", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
           - { name: "KSU", KSU: "yes", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
           - { name: "KSU SuSFS", KSU: "yes", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
+          # --- Penambahan ReSukiSU ---
+          - { name: "ReSukiSU", KSU: "resukisu", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
 
     name: Build ${{ matrix.variant.name }} variant
     uses: ./.github/workflows/build.yml
@@ -43,7 +45,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          # Find the info.txt file
+          # Find info.txt file
           info_file=$(find release_files -name "info.txt" -type f | head -1)
 
           if [[ -f "$info_file" ]]; then
