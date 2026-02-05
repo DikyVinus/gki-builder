@@ -189,9 +189,9 @@ if ksu_included; then
 elif [ "$KSU" == "resukisu" ]; then
   log "Setting up ReSukiSU for KVER $KVER..."
   
-  # Jalankan script setup ReSukiSU (using branch main)
+  # Run the ReSukiSU setup script (using branch main)
   log "Running ReSukiSU setup from main branch..."
-  curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash -s main
+  curl -LSs "https://raw.githubusercontent.com/Kingfinik98/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s main
   
   # Logika Patch SUSFS untuk ReSukiSU:
   # 5.10: Gunakan metode terpisah (clone di dalam blok ini).
