@@ -14,4 +14,4 @@ index abd1380..6274d22 100644
 +ccflags-y += -DKSU_NEXT_MANAGER_LIST=\"$(RESUKISU_MANAGER_LIST)\"
  
  ifeq ($(CONFIG_KSU_MULTI_MANAGER_SUPPORT), y)
- $(info -- Supported Unofficial Manager: ReSukiSU, MKSU RKSU, SukiSU-Ultra, MamboSU)
+ $(info -- Supported Unofficial Manager: ReSukiSU, MKSU, RKSU, SukiSU-Ultra, MamboSU)
