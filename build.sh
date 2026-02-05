@@ -10,7 +10,7 @@ elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
 
-KERNEL_NAME="BX-Enfiled"
+KERNEL_NAME="VorteX"
 USER="Dev-BoltX"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
