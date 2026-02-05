@@ -14,7 +14,7 @@ index abd1380..6274d22 100644
 +ccflags-y += -DKSU_NEXT_MANAGER_LIST=\"$(RESUKISU_MANAGER_LIST)\"
  
  ifeq ($(CONFIG_KSU_MULTI_MANAGER_SUPPORT), y)
- $(info -- Supported Unofficial Manager: MKSU, RKSU, SukiSU-Ultra, ReSukiSU, MamboSU)
+ $(info -- Supported Unofficial Manager: MamboSU, KowSU, MKSU, RKSU, SukiSU-Ultra, ReSukiSU)
 diff --git a/kernel/manager_sign.h b/kernel/manager_sign.h
 index a0db171..92478a1 100644
 --- a/kernel/manager_sign.h
