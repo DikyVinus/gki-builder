@@ -33,14 +33,14 @@ index 0000000..1111111 100644
 +#define EXPECTED_HASH_MAMBO                                                      \
 +    "a9462b8b98ea1ca7901b0cbdcebfaa35f0aa95e51b01d66e6b6d2c81b97746d8"
 +
-+// Manager 0x381
-+#define EXPECTED_SIZE_0x381 0x381
-+#define EXPECTED_HASH_0x381                                                    \
++// Manager WILD KSU
++#define EXPECTED_SIZE_WILD 0x381
++#define EXPECTED_SIZE_WILD                                                    \
 +    "52d52d8c8bfbe53dc2b6ff1c613184e2c03013e090fe8905d8e3d5dc2658c2e4"
 +
-+// Manager 0x3e6
-+#define EXPECTED_SIZE_0x3e6 0x3e6
-+#define EXPECTED_HASH_0x3e6                                                    \
++// Manager KernelSU-Next
++#define EXPECTED_SIZE_NEXT 0x3e6
++#define EXPECTED_SIZE_NEXT                                                    \
 +    "79e590113c4c4c0c222978e413a5faa801666957b1212a328e46c00c69821bf7"
 +
 +// Manager 0x338
@@ -61,8 +61,8 @@ index 0000000..2222222 100644
  #ifdef EXPECTED_SIZE
 +    { EXPECTED_SIZE_KOWX712, EXPECTED_HASH_KOWX712 }, // KOWX712
 +    { EXPECTED_SIZE_MAMBO, EXPECTED_HASH_MAMBO }, // MAMBO
-+    { EXPECTED_SIZE_0x381, EXPECTED_HASH_0x381 }, // 0x381
-+    { EXPECTED_SIZE_0x3e6, EXPECTED_HASH_0x3e6 }, // 0x3e6
++    { EXPECTED_SIZE_WILD, EXPECTED_SIZE_WILD }, // WILD
++    { EXPECTED_SIZE_NEXT, EXPECTED_SIZE_NEXT }, // NEXT
 +    { EXPECTED_SIZE_0x338, EXPECTED_HASH_0x338 }, // 0x338
  #ifdef EXPECTED_SIZE
      { EXPECTED_SIZE, EXPECTED_HASH }, // Custom
