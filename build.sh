@@ -82,11 +82,11 @@ if [ "$KVER" == "5.10" ]; then
 fi
 # ----------------------------------------------------
 
-# --- PATCH 500HZ (INSTALLED AT THE BEGINNING) ---
-log "Applying 500Hz patch..."
-wget -qO Inject_500hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_500hz.sh
-bash Inject_500hz.sh
-rm Inject_500hz.sh
+# --- PATCH 300HZ (INSTALLED AT THE BEGINNING) ---
+log "Applying 300Hz patch..."
+wget -qO Inject_300hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_300hz.sh
+bash Inject_300hz.sh
+rm Inject_300hz.sh
 # --------------------------------------
 
 # --- ADD KSU INJECT SCRIPT ---
@@ -193,10 +193,7 @@ elif [ "$KSU" == "resukisu" ]; then
   # Run the ReSukiSU setup script (using branch main)
   log "Running ReSukiSU setup from main branch..."
   curl -LSs "https://raw.githubusercontent.com/Kingfinik98/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s main
-  
-  # Logika Patch SUSFS untuk ReSukiSU:
-  # 5.10: Gunakan metode terpisah (clone di dalam blok ini).
-  # 6.1 & 6.6: Lewati patch di sini, biarkan diambil alih oleh blok Standard SUSFS di bawah (agar pakai patch manual lokal).
+  # PATCH SUSFS for GKI 5.10
   if [ "$KVER" == "5.10" ]; then
     log "Applying SUSFS patches for GKI 5.10 (ReSukiSU Method)..."
     SUSFS_BRANCH="gki-android12-5.10"
@@ -356,10 +353,9 @@ else
   $KMI_CHECK "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS" || true
 fi
 
-# --- PATCH KPM SECTION (Adjusted for build.sh) ---
-# Letakkan setelah build selesai, sebelum zipping
+# --- PATCH KPM SECTION ---
 log "Applying KPM Patch..."
-# Masuk ke direktori output kernel Image
+# Go to the kernel output directory Image
 cd $OUTDIR/arch/arm64/boot
 if [ -f Image ]; then
   echo "✅ Image found, applying KPM patch..."
@@ -376,7 +372,7 @@ if [ -f Image ]; then
 else
   log "Warning: Image file not found in $PWD. Skipping KPM patch."
 fi
-# Kembali ke direktori kerja awal (Post-compiling steps)
+# Return to the initial working directory (Post-compiling steps))
 cd $WORKDIR
 # ----------------------------------------------------
 
