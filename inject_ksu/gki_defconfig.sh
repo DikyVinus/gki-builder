@@ -75,10 +75,11 @@ fi
 echo "⚙️ Menambahkan Universal Performance Tuning"
 cat >> $DEFCONFIG <<EOF
 # --- Universal Performance Tuning ---
-CONFIG_HZ=500
-CONFIG_HZ_500=y
+CONFIG_HZ=300
+CONFIG_HZ_300=y
 CONFIG_CPU_FREQ=y
 CONFIG_HIGH_RES_TIMERS=y
+CONFIG_CPU_FREQ_GOV_PERFORMANCE=y
 EOF
 
 # --- Tambahan LTO & Compiler Optimization (KHUSUS 5.10) ---
