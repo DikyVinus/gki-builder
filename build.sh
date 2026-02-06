@@ -103,7 +103,7 @@ cd $WORKDIR
 log "Setting Kernel variant..."
 case "$KSU" in
   "yes") VARIANT="KSU" ;;
-  "resukisu") VARIANT="ReSukiSU" ;; # Added ReSukiSU Type
+  "Supported Unofficial Manager") VARIANT="ReSukiSU" ;; # Added ReSukiSU Type
   "no") VARIANT="VNL" ;;
 esac
 susfs_included && VARIANT+="+SuSFS"
