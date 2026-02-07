@@ -73,7 +73,7 @@ EOF
 fi
 
 # --- Universal Performance Tuning Addition ---
-echo "⚙️ Menambahkan Universal Performance Tuning"
+echo "⚙️ Adding Universal Performance Tuning"
 cat >> $DEFCONFIG <<EOF
 # --- Universal Performance Tuning ---
 CONFIG_HZ=300
