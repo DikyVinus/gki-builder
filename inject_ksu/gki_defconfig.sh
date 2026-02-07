@@ -3,7 +3,7 @@
 # Define target defconfig location
 DEFCONFIG="arch/arm64/configs/gki_defconfig"
 
-echo "⚙️ Menambahkan konfigurasi KSU & SuSFS"
+echo "⚙️ Added KSU & SuSFS configuration"
 
 # Base KSU Config & Dependencies
 cat >> $DEFCONFIG <<EOF
@@ -11,6 +11,7 @@ cat >> $DEFCONFIG <<EOF
 # Konfigurasi KernelSU Base
 CONFIG_KSU=y
 CONFIG_KPM=y
+CONFIG_KSU_MULTI_MANAGER_SUPPORT=y
 # Kprobes is a hard dependency for KSU-Next
 CONFIG_KPROBES=y
 CONFIG_KPROBE_EVENTS=y
@@ -24,7 +25,7 @@ if [ "$KSU" == "SukiSU" ]; then
         cat >> $DEFCONFIG <<EOF
 # --- SuSFS Configuration for SukiSU ---
 CONFIG_KSU_SUSFS=y
-# Biarkan SukiSU mengatur detail hook & mount secara internal
+# Let SukiSU handle the hook & mount details internally.
 EOF
     else
         echo "🔧 Mode: SukiSU Standard (No SuSFS)"
@@ -71,7 +72,7 @@ else
 EOF
 fi
 
-# --- Tambahan Universal Performance Tuning ---
+# --- Universal Performance Tuning Addition ---
 echo "⚙️ Menambahkan Universal Performance Tuning"
 cat >> $DEFCONFIG <<EOF
 # --- Universal Performance Tuning ---
@@ -91,9 +92,9 @@ CONFIG_TCP_CONG_WESTWOOD=n
 CONFIG_TCP_CONG_HTCP=n
 EOF
 
-# --- Tambahan LTO & Compiler Optimization (KHUSUS 5.10) ---
+# --- Additional LTO & Compiler Optimization (5.10 ONLY) ---
 if [ "$KVER" == "5.10" ]; then
-  echo "⚙️ Menambahkan LTO & Compiler Optimization (Khusus KVER 5.10)"
+  echo "⚙️ Added LTO & Compiler Optimization (KVER 5.10 Only)"
   cat >> $DEFCONFIG <<EOF
 # --- LTO & Compiler Optimization ---
 CONFIG_LTO=y
@@ -106,5 +107,5 @@ CONFIG_HAS_LTO_CLANG=y
 CONFIG_LTO_CLANG_THIN=y
 EOF
 else
-  echo "⚙️ LTO Optimization dilewati (Untuk KVER 6.1 & 6.6)"
+  echo "⚙️ LTO Optimization skipped (For KVER 6.1 & 6.6))"
 fi
