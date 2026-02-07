@@ -1,4 +1,4 @@
-name: Build Kernel
+name: Build Kernel gki 5.10
 
 on:
   workflow_call:
