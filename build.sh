@@ -18,7 +18,7 @@ ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
 
 # Fixed Logic: 5.10 & 6.1 use gki_defconfig, others use quartix_defconfig
 if [ "$KVER" == "5.10" ]; then
-  KERNEL_DEFCONFIG="otag_deconfig"
+  KERNEL_DEFCONFIG="gki_defconfig"
 elif [ "$KVER" == "6.1" ]; then
   KERNEL_DEFCONFIG="gki_defconfig"
 else
