@@ -1,74 +1,127 @@
-name: Build Kernel gki 5.10
+name: Release Build - android12-5.10
 
 on:
-  workflow_call:
-    inputs:
-      KERNEL_VERSION:
-        required: true
-        type: string
-      KSU:
-        required: true
-        type: string
-      KSU_SUSFS:
-        required: true
-        type: string
-      LAST_BUILD:
-        required: true
-        type: string
-      KSU_MANUAL_HOOK:
-        required: true
-        type: string
-      TODO:
-        required: true
-        type: string
-      STATUS:
-        required: false
-        type: string
-        default: "RELEASE"
+  workflow_dispatch:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        variant:
+          - { name: "VNL", KSU: "no", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
+          - { name: "KSU", KSU: "yes", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
+          - { name: "KSU SuSFS", KSU: "yes", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
+          # --- Penambahan ReSukiSU ---
+          - { name: "ReSukiSU", KSU: "resukisu", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
+
+    name: Build ${{ matrix.variant.name }} variant
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      KSU: ${{ matrix.variant.KSU }}
+      KSU_SUSFS: ${{ matrix.variant.KSU_SUSFS }}
+      LAST_BUILD: ${{ matrix.variant.LAST_BUILD }}
+      KSU_MANUAL_HOOK: ${{ matrix.variant.KSU_MANUAL_HOOK }}
+      TODO: "kernel"
+      KERNEL_VERSION: "5.10"
+
+  release:
+    name: Create Unified Release
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source
+      - name: Checkout current repo
         uses: actions/checkout@v4
-
-      - name: Setup Environment
-        run: |
-          echo "MAN_DISABLE=true" >> $GITHUB_ENV
-          echo "DEBIAN_FRONTEND=noninteractive" >> $GITHUB_ENV
-          sudo apt-get update
-          sudo apt-get install -y git wget curl python3 python3-pip bc bison flex build-essential zip libc6-dev libncurses5-dev libssl-dev liblz4-tool ccache 
-
-      - name: Run Build Script
-        env:
-          KSU: ${{ inputs.KSU }}
-          KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
-          LAST_BUILD: ${{ inputs.LAST_BUILD }}
-          KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
-          TODO: ${{ inputs.TODO }}
-          STATUS: ${{ inputs.STATUS }}
-          KERNEL_VERSION: ${{ inputs.KERNEL_VERSION }}
-        run: |
-          export KSU
-          export KSU_SUSFS
-          export LAST_BUILD
-          export KSU_MANUAL_HOOK
-          export TODO
-          export STATUS
-          export KERNEL_VERSION
-          
-          bash build.sh
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
         with:
-          # --- BAGIAN YANG DIPERBAIKI ---
-          # Nama artifact sekarang DINAMIS berdasarkan input, bukan 'info-10' lagi
-          name: info-${{ inputs.KERNEL_VERSION }}-${{ inputs.KSU }}-susfs-${{ inputs.KSU_SUSFS }}
-          # -----------------------------
-          path: artifacts/*.txt
-          if-no-files-found: warn
-          compression-level: 6
-          overwrite: false
-          include-hidden-files: false
+          fetch-depth: 1
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_files
+
+      - name: Extract variables from info.txt (Safe)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          # Find info.txt file
+          info_file=$(find release_files -name "info.txt" -type f | head -1)
+
+          if [[ -f "$info_file" ]]; then
+            echo "Found info.txt at: $info_file"
+
+            # Extract variables safely without using functions.sh
+            while IFS='=' read -r key value; do
+              # Skip empty lines and comments
+              [[ -z "$key" || "$key" =~ ^#.*$ ]] && continue
+
+              # Clean up whitespace
+              key=$(echo "$key" | xargs)
+              value=$(echo "$value" | xargs)
+
+              # Validate that we have both key and value
+              if [[ -n "$key" && -n "$value" ]]; then
+                echo "Setting: $key=$value"
+                echo "$key=$value" >> $GITHUB_ENV
+              fi
+            done < "$info_file"
+
+            echo "Variables extracted successfully"
+          fi
+
+      - name: Generate release tag
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+            # LOGIC UPDATE: Gunakan versi dari build.sh jika tersedia, jika tidak gunakan logika increment r1, r2 (fallback)
+            if [[ -n "$RELEASE" ]]; then
+                # Jika variabel RELEASE ada (dari info.txt), buat tag berdasarkan itu (contoh: VorteX-v0.3)
+                PROPOSED_TAG="${KERNEL_NAME}-${RELEASE}"
+
+                # Cek apakah tag ini sudah ada di remote untuk menghindari error
+                if gh release view "$PROPOSED_TAG" --repo "$RELEASE_REPO" > /dev/null 2>&1; then
+                    echo "Tag $PROPOSED_TAG already exists. Appending timestamp to avoid conflict."
+                    RELEASE_TAG="${PROPOSED_TAG}-$(date +%Y%m%d)"
+                else
+                    RELEASE_TAG="$PROPOSED_TAG"
+                fi
+            else
+                # Fallback ke logika asli jika RELEASE tidak ditemukan (membuat r1, r2, dst)
+                LATEST_TAG=$(gh api repos/$RELEASE_REPO/tags --jq '.[0].name' 2>/dev/null || echo "")
+
+                if [[ -z "$LATEST_TAG" ]] || ! echo "$LATEST_TAG" | grep -q "$KERNEL_NAME"; then
+                    RELEASE_TAG="$KERNEL_NAME-r1"
+                else
+                    RELEASE_TAG="$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')"
+                fi
+            fi
+
+            echo "Release tag: $RELEASE_TAG"
+            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+      - name: Upload All Builds to release repo
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ env.RELEASE_REPO }}
+          name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          prerelease: true
+          files: release_files/**/*
+          body: |
+            ### 📢 ${{ env.RELEASE_TAG }} Builds
+            -> Linux ${{ env.LINUX_VERSION }} (android12-5.10-lts)
+            -> SUSFS ඞ ${{ env.SUSFS_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Send notification to TG (Safe)
+        run: |
+            MESSAGE="📦 Release completed! [Click](https://github.com/${{ env.RELEASE_REPO }}/releases/tag/${{ env.RELEASE_TAG }})"
+            source functions.sh
+            send_msg "$MESSAGE"
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
