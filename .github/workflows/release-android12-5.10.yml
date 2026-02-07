@@ -75,14 +75,27 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-            # Get the latest tag, handle case where no tags exist
-            LATEST_TAG=$(gh api repos/$RELEASE_REPO/tags --jq '.[0].name' 2>/dev/null || echo "")
+            # LOGIC UPDATE: Gunakan versi dari build.sh jika tersedia, jika tidak gunakan logika increment r1, r2 (fallback)
+            if [[ -n "$RELEASE" ]]; then
+                # Jika variabel RELEASE ada (dari info.txt), buat tag berdasarkan itu (contoh: VorteX-v0.3)
+                PROPOSED_TAG="${KERNEL_NAME}-${RELEASE}"
 
-            # Handle case when $LATEST_TAG doesn't contain $KERNEL_NAME or is empty
-            if [[ -z "$LATEST_TAG" ]] || ! echo "$LATEST_TAG" | grep -q "$KERNEL_NAME"; then
-                RELEASE_TAG="$KERNEL_NAME-r1"
+                # Cek apakah tag ini sudah ada di remote untuk menghindari error
+                if gh release view "$PROPOSED_TAG" --repo "$RELEASE_REPO" > /dev/null 2>&1; then
+                    echo "Tag $PROPOSED_TAG already exists. Appending timestamp to avoid conflict."
+                    RELEASE_TAG="${PROPOSED_TAG}-$(date +%Y%m%d)"
+                else
+                    RELEASE_TAG="$PROPOSED_TAG"
+                fi
             else
-                RELEASE_TAG="$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')"
+                # Fallback ke logika asli jika RELEASE tidak ditemukan (membuat r1, r2, dst)
+                LATEST_TAG=$(gh api repos/$RELEASE_REPO/tags --jq '.[0].name' 2>/dev/null || echo "")
+
+                if [[ -z "$LATEST_TAG" ]] || ! echo "$LATEST_TAG" | grep -q "$KERNEL_NAME"; then
+                    RELEASE_TAG="$KERNEL_NAME-r1"
+                else
+                    RELEASE_TAG="$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')"
+                fi
             fi
 
             echo "Release tag: $RELEASE_TAG"
@@ -104,14 +117,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Send notification to TG (Safe)
-        run: |
-            MESSAGE="📦 Release completed! [Click](https://github.com/${{ env.RELEASE_REPO }}/releases/tag/${{ env.RELEASE_TAG }})"
-            source functions.sh
-            send_msg "$MESSAGE"
-        env:
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
       - name: Send notification to TG (Safe)
         run: |
             MESSAGE="📦 Release completed! [Click](https://github.com/${{ env.RELEASE_REPO }}/releases/tag/${{ env.RELEASE_TAG }})"
