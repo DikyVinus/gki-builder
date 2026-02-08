@@ -88,23 +88,16 @@ wget -qO Inject_300hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-build
 bash Inject_300hz.sh
 rm Inject_300hz.sh
 # --------------------------------------
-# --- Additional LTO & Compiler Optimization (5.10 ONLY) ---
-if [ "$KVER" == "5.10" ]; then
-  echo "⚙️ Added LTO & Compiler Optimization (KVER 5.10 Only)"
-  cat >> $DEFCONFIG <<EOF
-# --- LTO & Compiler Optimization ---
-CONFIG_LTO=y
-CONFIG_LTO_CLANG=y
-CONFIG_ARCH_SUPPORTS_LTO_CLANG=y
-CONFIG_ARCH_SUPPORTS_LTO_CLANG_THIN=y
-CONFIG_HAS_LTO_CLANG=y
-# CONFIG_LTO_NONE is not set
-# CONFIG_LTO_CLANG_FULL is not set
-CONFIG_LTO_CLANG_THIN=y
-EOF
-else
-  echo "⚙️ LTO Optimization skipped (For KVER 6.1 & 6.6))"
-fi
+
+config --enable CONFIG_LTO
+config --enable CONFIG_LTO_CLANG
+config --enable CONFIG_ARCH_SUPPORTS_LTO_CLANG
+config --enable CONFIG_ARCH_SUPPORTS_LTO_CLANG_THIN=y
+config --enable CONFIG_HAS_LTO_CLANG
+config --disable CONFIG_LTO_NONE is not set
+config --disable CONFIG_LTO_CLANG_FULL is not set
+config --enable CONFIG_LTO_CLANG_THIN
+
 #------------------------------------------------------
 # --- ADD KSU INJECT SCRIPT ---
 #log "Injecting custom KSU & SuSFS configs from GitHub..."
