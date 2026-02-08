@@ -90,12 +90,12 @@ rm Inject_300hz.sh
 # --------------------------------------
 
 # --- ADD KSU INJECT SCRIPT ---
-log "Injecting custom KSU & SuSFS configs from GitHub..."
-export KSU
-export KSU_SUSFS
-wget -qO inject.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/gki_defconfig.sh
-bash inject.sh
-rm inject.sh
+#log "Injecting custom KSU & SuSFS configs from GitHub..."
+#export KSU
+#export KSU_SUSFS
+#wget -qO inject.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/gki_defconfig.sh
+#bash inject.sh
+#rm inject.sh
 # --------------------------------------
 cd $WORKDIR
 
