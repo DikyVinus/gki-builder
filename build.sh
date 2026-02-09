@@ -31,15 +31,15 @@ if [ "$KVER" == "6.6" ]; then
   KERNEL_BRANCH="android15-6.6-2025-01"
 elif [ "$KVER" == "6.1" ]; then
   KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-6.1.git"
-  ANYKERNEL_BRANCH="android14-6.1"
-  KERNEL_BRANCH="master"
+  ANYKERNEL_BRANCH="master"
+  KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-5.10.git"
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="android12-5.10-staging"
 fi
 DEFCONFIG_TO_MERGE=""
-GKI_RELEASES_REPO="https://github.com/Kingfinik98/gki-builde"
+GKI_RELEASES_REPO="https://github.com/Kingfinik98/gki-builder"
 #Change the clang by removing the (#) sign then apply
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
 #CLANG_URL="https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/archive/refs/heads/lineage-20.0.tar.gz"
