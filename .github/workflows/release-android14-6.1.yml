@@ -17,7 +17,7 @@ on:
 jobs:
   build:
     name: Build ${{ github.event.inputs.variant }}
-    uses: ./.github/workflows/build.gki
+    uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
       KSU: ${{ github.event.inputs.variant == 'ReSukiSU' && 'resukisu' || (github.event.inputs.variant == 'VNL' && 'no' || 'yes') }}
