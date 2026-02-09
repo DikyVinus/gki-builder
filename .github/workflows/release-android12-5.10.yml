@@ -1,88 +1,116 @@
-name: Build Kernel
+name: Release Build - android12-5.10
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      KERNEL_VERSION:
-        description: 'Versi Kernel (contoh: 5.10, 6.1)'
+      variant:
+        description: 'Select Kernel Variant'
         required: true
-        type: string
-      KSU:
-        description: 'Aktifkan KernelSU'
-        required: true
-        type: string
-        default: 'yes'
-      KSU_SUSFS:
-        description: 'Aktifkan SuSFS'
-        required: true
-        type: string
-        default: 'false'
-      STATUS:
-        description: 'Status Build (Stable/BETA)'
-        required: false
-        type: string
-        default: 'Stable'
-      LAST_BUILD:
-        description: 'Apakah ini build terakhir?'
-        required: true
-        type: string
-        default: 'false'
-      KSU_MANUAL_HOOK:
-        description: 'Aktifkan Manual Hook KSU'
-        required: true
-        type: string
-        default: 'false'
-      TODO:
-        description: 'Tugas (kernel/defconfig)'
-        required: true
-        type: string
-        default: 'kernel'
-    secrets:
-      GH_TOKEN:
-        required: true
-      TG_BOT_TOKEN:
-        required: true
-      TG_CHAT_ID:
-        required: true
+        default: 'KSU'
+        type: choice
+        options:
+          - 'VNL'
+          - 'KSU'
+          - 'KSU SuSFS'
+          - 'ReSukiSU'
 
 jobs:
   build:
+    name: Build ${{ github.event.inputs.variant }}
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      KSU: ${{ github.event.inputs.variant == 'ReSukiSU' && 'resukisu' || (github.event.inputs.variant == 'VNL' && 'no' || 'yes') }}
+      KSU_SUSFS: ${{ (github.event.inputs.variant == 'KSU SuSFS' || github.event.inputs.variant == 'ReSukiSU') && 'true' || 'false' }}
+      LAST_BUILD: "true"
+      KSU_MANUAL_HOOK: "false"
+      TODO: "kernel"
+      KERNEL_VERSION: "5.10"
+      STATUS: "Stable"
+
+  release:
+    name: Create Unified Release
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source
+      - name: Checkout current repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
 
-      - name: Setup Build Environment
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git wget curl build-essential bc python3 bison flex zip openssl libssl-dev ccache
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_files
 
-      - name: Build Kernel
+      - name: Extract variables from info.txt
         env:
-          # Variabel untuk Script Bash
-          KVER: ${{ inputs.KERNEL_VERSION }}
-          KSU: ${{ inputs.KSU }}
-          KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
-          STATUS: ${{ inputs.STATUS }}
-          LAST_BUILD: ${{ inputs.LAST_BUILD }}
-          KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
-          TODO: ${{ inputs.TODO }}
-          
-          # Secrets untuk Script Bash (untuk upload/notif jika ada di dalam script)
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          info_file=$(find release_files -name "info.txt" -type f | head -1)
+
+          if [[ -f "$info_file" ]]; then
+            echo "Found info.txt at: $info_file"
+
+            while IFS='=' read -r key value; do
+              [[ -z "$key" || "$key" =~ ^#.*$ ]] && continue
+              key=$(echo "$key" | xargs)
+              value=$(echo "$value" | xargs)
+
+              if [[ -n "$key" && -n "$value" ]]; then
+                echo "$key=$value" >> $GITHUB_ENV
+              fi
+            done < "$info_file"
+          fi
+
+      - name: Generate release tag
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+            if [[ -n "$RELEASE" ]]; then
+                PROPOSED_TAG="${KERNEL_NAME}-${RELEASE}"
+
+                if gh release view "$PROPOSED_TAG" --repo "$RELEASE_REPO" > /dev/null 2>&1; then
+                    echo "Tag $PROPOSED_TAG already exists. Appending timestamp."
+                    RELEASE_TAG="${PROPOSED_TAG}-$(date +%Y%m%d)"
+                else
+                    RELEASE_TAG="$PROPOSED_TAG"
+                fi
+            else
+                LATEST_TAG=$(gh api repos/$RELEASE_REPO/tags --jq '.[0].name' 2>/dev/null || echo "")
+
+                if [[ -z "$LATEST_TAG" ]] || ! echo "$LATEST_TAG" | grep -q "$KERNEL_NAME"; then
+                    RELEASE_TAG="$KERNEL_NAME-r1"
+                else
+                    RELEASE_TAG="$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')"
+                fi
+            fi
+
+            echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+      - name: Upload All Builds to release repo
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: ${{ env.RELEASE_REPO }}
+          name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          prerelease: true
+          files: release_files/**/*
+          body: |
+            ### 📢 ${{ env.RELEASE_TAG }} Builds
+            -> Linux ${{ env.LINUX_VERSION }} (android12-5.10-lts)
+            -> SUSFS ඞ ${{ env.SUSFS_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Send notification to TG
+        run: |
+            MESSAGE="📦 Release completed! [Click](https://github.com/${{ env.RELEASE_REPO }}/releases/tag/${{ env.RELEASE_TAG }})"
+            source functions.sh
+            send_msg "$MESSAGE"
+        env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-        run: |
-          # Pastikan file build.sh Anda bernama build.sh. Jika beda, sesuaikan nama filenya di sini.
-          chmod +x build.sh
-          bash build.sh
-
-      - name: Upload Artifacts (Stable Only)
-        if: ${{ inputs.STATUS != 'BETA' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts
-          path: artifacts/
-          if-no-files-found: ignore
