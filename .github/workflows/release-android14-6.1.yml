@@ -26,7 +26,7 @@ jobs:
       KSU_MANUAL_HOOK: "false"
       TODO: "kernel"
       KERNEL_VERSION: "6.1"
-      STATUS: "Stable" # <--- FIX DITAMBAHKAN DISINI
+      STATUS: "Stable"
 
   release:
     name: Create Unified Release
@@ -99,9 +99,17 @@ jobs:
           prerelease: true
           files: release_files/**/*
           body: |
-            ### 📢 ${{ env.RELEASE_TAG }} Builds
-            -> Linux ${{ env.LINUX_VERSION }} (android14-6.1-lts)
-            -> SUSFS ඞ ${{ env.SUSFS_VERSION }}
+            ### 📢 ${{ env.RELEASE_TAG }}
+            
+            **Informasi Build:**
+            - 🐧 **Kernel:** ${{ env.KERNEL_NAME }}
+            - 🔖 **Versi:** ${{ env.LINUX_VERSION }} (android14-6.1-lts)
+            - 🔰 **Variant:** ${{ github.event.inputs.variant }}
+            - 🛡️ **SuSFS:** ${{ env.SUSFS_VERSION }}
+            
+            ---
+            **Status:** ✅ Stable Release
+            **Compiler:** Clang-r584948b
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
