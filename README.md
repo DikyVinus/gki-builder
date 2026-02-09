@@ -14,7 +14,8 @@ remove the (#) sign from the Clang text :CLANG_URL to replace clang
 - Fixed and maintained by **[@BoltXNext](https://github.com/Kingfinik98)**
 
 ---
-
+Anykernel Here:
+[https://github.com/Kingfinik98/AnyKernel3](https://github.com/Kingfinik98/AnyKernel3)
 ## Credits
 
 - Thanks to several kernel community developers for conceptual references and ideas.
