@@ -14,7 +14,7 @@ KERNEL_NAME="VorteX"
 USER="Dev-BoltX"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
-ANYKERNEL_REPO="https://github.com/linastorvaldz/anykernel"
+ANYKERNEL_REPO="https://github.com/Kingfinik98/AnyKernel3"
 
 # Fixed Logic: 5.10 & 6.1 use gki_defconfig, others use quartix_defconfig
 if [ "$KVER" == "5.10" ]; then
