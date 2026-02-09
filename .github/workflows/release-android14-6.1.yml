@@ -17,7 +17,7 @@ on:
 jobs:
   build:
     name: Build ${{ github.event.inputs.variant }}
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/build.gki
     secrets: inherit
     with:
       KSU: ${{ github.event.inputs.variant == 'ReSukiSU' && 'resukisu' || (github.event.inputs.variant == 'VNL' && 'no' || 'yes') }}
@@ -26,6 +26,7 @@ jobs:
       KSU_MANUAL_HOOK: "false"
       TODO: "kernel"
       KERNEL_VERSION: "6.1"
+      STATUS: "Stable" # <--- FIX DITAMBAHKAN DISINI
 
   release:
     name: Create Unified Release
