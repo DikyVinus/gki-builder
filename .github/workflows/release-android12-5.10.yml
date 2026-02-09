@@ -26,7 +26,7 @@ jobs:
       KSU_MANUAL_HOOK: "false"
       TODO: "kernel"
       KERNEL_VERSION: "5.10"
-      STATUS: "Stable" # <--- FIX DITAMBAHKAN DISINI SUPAYA ARTIFACTS DIBUAT
+      STATUS: "Stable"
 
   release:
     name: Create Unified Release
