@@ -26,6 +26,7 @@ jobs:
       KSU_MANUAL_HOOK: "false"
       TODO: "kernel"
       KERNEL_VERSION: "6.6"
+      STATUS: "Stable" # <--- FIX DITAMBAHKAN DISINI
 
   release:
     name: Create Unified Release
