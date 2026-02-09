@@ -12,9 +12,9 @@ if [ ! -f "$KCONFIG_HZ" ]; then
     exit 1
 fi
 
-# Perform replacement of 300Hz configuration to 500Hz
+# Perform replacement of 300Hz configuration to 300Hz
 sed -i 's/config HZ_300/config HZ_300/g' "$KCONFIG_HZ"
 sed -i 's/bool "300 HZ"/bool "300 HZ"/g' "$KCONFIG_HZ"
-sed -i 's/default 300 if HZ_300/default 300 if HZ_300/g' "$KCONFIG_HZ"
+sed -i 's/default 300 if HZ_300/default 500 if HZ_300/g' "$KCONFIG_HZ"
 
 echo " Successfully patched kernel for 300Hz support."
