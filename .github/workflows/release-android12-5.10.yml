@@ -4,34 +4,32 @@ on:
   workflow_dispatch:
     inputs:
       variant:
-        description: 'Pilih Varian Kernel yang akan dibangun'
+        description: 'Select Kernel Variant to Build'
         required: true
         default: 'KSU'
         type: choice
         options:
           - 'VNL (Vanilla - No Root)'
-          - 'KSU (KernelSU Next + All Manager)'
-          - 'KSU SuSFS (KernelSU Next + SuSFS)'
-          - 'ReSukiSU (KernelSU All Manager + SuSFS)'
+          - 'KSU (Next + All Manager)'
+          - 'KSU SuSFS (Next + SuSFS)'
+          - 'ReSukiSU (All Manager + SuSFS)'
 
 jobs:
   build:
-    # Nama job akan mengikuti varian yang dipilih
     name: Build ${{ github.event.inputs.variant }}
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
-      # Logika Mapping Pilihan ke Variabel Build Script
-      # Jika VNL -> KSU=no
-      # Jika ReSukiSU -> KSU=resukisu
-      # Selain itu (KSU / KSU SuSFS) -> KSU=yes
-      KSU: ${{ github.event.inputs.variant == 'VNL (Vanilla - No Root)' && 'no' || (github.event.inputs.variant == 'ReSukiSU (KernelSU All Manager + SuSFS)' && 'resukisu' || 'yes') }}
+      # Mapping logic:
+      # VNL -> no
+      # ReSukiSU -> resukisu
+      # Others -> yes
+      KSU: ${{ github.event.inputs.variant == 'VNL (Vanilla - No Root)' && 'no' || (github.event.inputs.variant == 'ReSukiSU (All Manager + SuSFS)' && 'resukisu' || 'yes') }}
       
-      # Logika Mapping SuSFS
-      # Hanya aktif jika pilihan mengandung kata 'SuSFS'
+      # Enable SuSFS only if selected
       KSU_SUSFS: ${{ contains(github.event.inputs.variant, 'SuSFS') && 'true' || 'false' }}
       
-      # Karena build dipilih manual, ini adalah build terakhir (LAST_BUILD=true)
+      # Manual release build implies this is the final artifact
       LAST_BUILD: "true"
       KSU_MANUAL_HOOK: "false"
       TODO: "kernel"
@@ -52,34 +50,25 @@ jobs:
         with:
           path: release_files
 
-      - name: Extract variables from info.txt (Safe)
+      - name: Extract variables from info.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          # Find info.txt file
           info_file=$(find release_files -name "info.txt" -type f | head -1)
 
           if [[ -f "$info_file" ]]; then
             echo "Found info.txt at: $info_file"
 
-            # Extract variables safely without using functions.sh
             while IFS='=' read -r key value; do
-              # Skip empty lines and comments
               [[ -z "$key" || "$key" =~ ^#.*$ ]] && continue
-
-              # Clean up whitespace
               key=$(echo "$key" | xargs)
               value=$(echo "$value" | xargs)
 
-              # Validate that we have both key and value
               if [[ -n "$key" && -n "$value" ]]; then
-                echo "Setting: $key=$value"
                 echo "$key=$value" >> $GITHUB_ENV
               fi
             done < "$info_file"
-
-            echo "Variables extracted successfully"
           fi
 
       - name: Generate release tag
@@ -87,12 +76,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-            # LOGIC UPDATE: Gunakan versi dari build.sh jika tersedia, jika tidak gunakan logika increment r1, r2 (fallback)
             if [[ -n "$RELEASE" ]]; then
-                # Jika variabel RELEASE ada (dari info.txt), buat tag berdasarkan itu (contoh: VorteX-v0.3)
                 PROPOSED_TAG="${KERNEL_NAME}-${RELEASE}"
 
-                # Cek apakah tag ini sudah ada di remote untuk menghindari error
                 if gh release view "$PROPOSED_TAG" --repo "$RELEASE_REPO" > /dev/null 2>&1; then
                     echo "Tag $PROPOSED_TAG already exists. Appending timestamp to avoid conflict."
                     RELEASE_TAG="${PROPOSED_TAG}-$(date +%Y%m%d)"
@@ -100,7 +86,6 @@ jobs:
                     RELEASE_TAG="$PROPOSED_TAG"
                 fi
             else
-                # Fallback ke logika asli jika RELEASE tidak ditemukan (membuat r1, r2, dst)
                 LATEST_TAG=$(gh api repos/$RELEASE_REPO/tags --jq '.[0].name' 2>/dev/null || echo "")
 
                 if [[ -z "$LATEST_TAG" ]] || ! echo "$LATEST_TAG" | grep -q "$KERNEL_NAME"; then
@@ -110,7 +95,6 @@ jobs:
                 fi
             fi
 
-            echo "Release tag: $RELEASE_TAG"
             echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
       - name: Upload All Builds to release repo
@@ -129,7 +113,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Send notification to TG (Safe)
+      - name: Send notification to TG
         run: |
             MESSAGE="📦 Release completed! [Click](https://github.com/${{ env.RELEASE_REPO }}/releases/tag/${{ env.RELEASE_TAG }})"
             source functions.sh
