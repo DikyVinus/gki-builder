@@ -2,26 +2,38 @@ name: Release Build - android12-5.10
 
 on:
   workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Pilih Varian Kernel yang akan dibangun'
+        required: true
+        default: 'KSU'
+        type: choice
+        options:
+          - 'VNL (Vanilla - No Root)'
+          - 'KSU (KernelSU Next + All Manager)'
+          - 'KSU SuSFS (KernelSU Next + SuSFS)'
+          - 'ReSukiSU (KernelSU All Manager + SuSFS)'
 
 jobs:
   build:
-    strategy:
-      matrix:
-        variant:
-          - { name: "VNL", KSU: "no", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
-          - { name: "KSU", KSU: "yes", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
-          - { name: "KSU SuSFS", KSU: "yes", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
-          # --- Penambahan ReSukiSU ---
-          - { name: "ReSukiSU", KSU: "resukisu", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
-
-    name: Build ${{ matrix.variant.name }} variant
+    # Nama job akan mengikuti varian yang dipilih
+    name: Build ${{ github.event.inputs.variant }}
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
-      KSU: ${{ matrix.variant.KSU }}
-      KSU_SUSFS: ${{ matrix.variant.KSU_SUSFS }}
-      LAST_BUILD: ${{ matrix.variant.LAST_BUILD }}
-      KSU_MANUAL_HOOK: ${{ matrix.variant.KSU_MANUAL_HOOK }}
+      # Logika Mapping Pilihan ke Variabel Build Script
+      # Jika VNL -> KSU=no
+      # Jika ReSukiSU -> KSU=resukisu
+      # Selain itu (KSU / KSU SuSFS) -> KSU=yes
+      KSU: ${{ github.event.inputs.variant == 'VNL (Vanilla - No Root)' && 'no' || (github.event.inputs.variant == 'ReSukiSU (KernelSU All Manager + SuSFS)' && 'resukisu' || 'yes') }}
+      
+      # Logika Mapping SuSFS
+      # Hanya aktif jika pilihan mengandung kata 'SuSFS'
+      KSU_SUSFS: ${{ contains(github.event.inputs.variant, 'SuSFS') && 'true' || 'false' }}
+      
+      # Karena build dipilih manual, ini adalah build terakhir (LAST_BUILD=true)
+      LAST_BUILD: "true"
+      KSU_MANUAL_HOOK: "false"
       TODO: "kernel"
       KERNEL_VERSION: "5.10"
 
