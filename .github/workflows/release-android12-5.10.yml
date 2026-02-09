@@ -20,18 +20,9 @@ jobs:
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
-      # Mapping inputs to script variables
-      # ReSukiSU maps to 'resukisu' to match the logic block in build.sh
-      # VNL maps to 'no'
-      # Others map to 'yes' (Standard KernelSU)
       KSU: ${{ github.event.inputs.variant == 'ReSukiSU' && 'resukisu' || (github.event.inputs.variant == 'VNL' && 'no' || 'yes') }}
-      
-      # Enable SuSFS only for 'KSU SuSFS' and 'ReSukiSU'
       KSU_SUSFS: ${{ (github.event.inputs.variant == 'KSU SuSFS' || github.event.inputs.variant == 'ReSukiSU') && 'true' || 'false' }}
-      
-      # Release specific flags
       LAST_BUILD: "true"
-      STATUS: "RELEASE"
       KSU_MANUAL_HOOK: "false"
       TODO: "kernel"
       KERNEL_VERSION: "5.10"
