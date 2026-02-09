@@ -2,26 +2,28 @@ name: Release Build - android15-6.6
 
 on:
   workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Select Kernel Variant'
+        required: true
+        default: 'KSU'
+        type: choice
+        options:
+          - 'VNL'
+          - 'KSU'
+          - 'KSU SuSFS'
+          - 'ReSukiSU'
 
 jobs:
   build:
-    strategy:
-      matrix:
-        variant:
-          - { name: "VNL", KSU: "no", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
-          - { name: "KSU", KSU: "yes", KSU_SUSFS: "false", KSU_MANUAL_HOOK: "false", LAST_BUILD: "false" }
-          - { name: "KSU SuSFS", KSU: "yes", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
-          # --- Penambahan ReSukiSU ---
-          - { name: "ReSukiSU", KSU: "resukisu", KSU_SUSFS: "true", KSU_MANUAL_HOOK: "false", LAST_BUILD: "true" }
-
-    name: Build ${{ matrix.variant.name }} variant
+    name: Build ${{ github.event.inputs.variant }}
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
-      KSU: ${{ matrix.variant.KSU }}
-      KSU_SUSFS: ${{ matrix.variant.KSU_SUSFS }}
-      LAST_BUILD: ${{ matrix.variant.LAST_BUILD }}
-      KSU_MANUAL_HOOK: ${{ matrix.variant.KSU_MANUAL_HOOK }}
+      KSU: ${{ github.event.inputs.variant == 'ReSukiSU' && 'resukisu' || (github.event.inputs.variant == 'VNL' && 'no' || 'yes') }}
+      KSU_SUSFS: ${{ (github.event.inputs.variant == 'KSU SuSFS' || github.event.inputs.variant == 'ReSukiSU') && 'true' || 'false' }}
+      LAST_BUILD: "true"
+      KSU_MANUAL_HOOK: "false"
       TODO: "kernel"
       KERNEL_VERSION: "6.6"
 
@@ -40,34 +42,25 @@ jobs:
         with:
           path: release_files
 
-      - name: Extract variables from info.txt (Safe)
+      - name: Extract variables from info.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          # Find info.txt file
           info_file=$(find release_files -name "info.txt" -type f | head -1)
 
           if [[ -f "$info_file" ]]; then
             echo "Found info.txt at: $info_file"
 
-            # Extract variables safely without using functions.sh
             while IFS='=' read -r key value; do
-              # Skip empty lines and comments
               [[ -z "$key" || "$key" =~ ^#.*$ ]] && continue
-
-              # Clean up whitespace
               key=$(echo "$key" | xargs)
               value=$(echo "$value" | xargs)
 
-              # Validate that we have both key and value
               if [[ -n "$key" && -n "$value" ]]; then
-                echo "Setting: $key=$value"
                 echo "$key=$value" >> $GITHUB_ENV
               fi
             done < "$info_file"
-
-            echo "Variables extracted successfully"
           fi
 
       - name: Generate release tag
@@ -75,17 +68,25 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-            # Get the latest tag, handle case where no tags exist
-            LATEST_TAG=$(gh api repos/$RELEASE_REPO/tags --jq '.[0].name' 2>/dev/null || echo "")
+            if [[ -n "$RELEASE" ]]; then
+                PROPOSED_TAG="${KERNEL_NAME}-${RELEASE}"
 
-            # Handle case when $LATEST_TAG doesn't contain $KERNEL_NAME or is empty
-            if [[ -z "$LATEST_TAG" ]] || ! echo "$LATEST_TAG" | grep -q "$KERNEL_NAME"; then
-                RELEASE_TAG="$KERNEL_NAME-r1"
+                if gh release view "$PROPOSED_TAG" --repo "$RELEASE_REPO" > /dev/null 2>&1; then
+                    echo "Tag $PROPOSED_TAG already exists. Appending timestamp."
+                    RELEASE_TAG="${PROPOSED_TAG}-$(date +%Y%m%d)"
+                else
+                    RELEASE_TAG="$PROPOSED_TAG"
+                fi
             else
-                RELEASE_TAG="$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')"
+                LATEST_TAG=$(gh api repos/$RELEASE_REPO/tags --jq '.[0].name' 2>/dev/null || echo "")
+
+                if [[ -z "$LATEST_TAG" ]] || ! echo "$LATEST_TAG" | grep -q "$KERNEL_NAME"; then
+                    RELEASE_TAG="$KERNEL_NAME-r1"
+                else
+                    RELEASE_TAG="$(echo "$LATEST_TAG" | awk -F'-r' '{suffix=$2; if (!suffix) suffix=0; suffix++; printf "%s-r%d", $1, suffix}')"
+                fi
             fi
 
-            echo "Release tag: $RELEASE_TAG"
             echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
       - name: Upload All Builds to release repo
@@ -104,7 +105,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-      - name: Send notification to TG (Safe)
+      - name: Send notification to TG
         run: |
             MESSAGE="📦 Release completed! [Click](https://github.com/${{ env.RELEASE_REPO }}/releases/tag/${{ env.RELEASE_TAG }})"
             source functions.sh
