@@ -99,9 +99,17 @@ jobs:
           prerelease: true
           files: release_files/**/*
           body: |
-            ### 📢 ${{ env.RELEASE_TAG }} Builds
-            -> Linux ${{ env.LINUX_VERSION }} (android12-5.10-lts)
-            -> SUSFS ඞ ${{ env.SUSFS_VERSION }}
+            ### 📢 ${{ env.RELEASE_TAG }}
+            
+            **Informasi Build:**
+            - 🐧 **Kernel:** ${{ env.KERNEL_NAME }}
+            - 🔖 **Versi:** ${{ env.LINUX_VERSION }} (android12-5.10-lts)
+            - 🔰 **Variant:** ${{ github.event.inputs.variant }}
+            - 🛡️ **SuSFS:** ${{ env.SUSFS_VERSION }}
+            
+            ---
+            **Status:** ✅ Stable Release
+            **Compiler:** Clang-r584948b
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
