@@ -101,7 +101,7 @@ jobs:
           body: |
             ### 📢 ${{ env.RELEASE_TAG }}
             
-            **Informasi Build:**
+            **Build Information:**
             - 🐧 **Kernel:** ${{ env.KERNEL_NAME }}
             - 🔖 **Versi:** ${{ env.LINUX_VERSION }} (android12-5.10-lts)
             - 🔰 **Variant:** ${{ github.event.inputs.variant }}
