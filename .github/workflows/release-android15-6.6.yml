@@ -103,7 +103,7 @@ jobs:
             
             **Build Information:**
             - 🐧 **Kernel:** ${{ env.KERNEL_NAME }}
-            - 🔖 **Versi:** ${{ env.LINUX_VERSION }} (android15-6.6-lts)
+            - 🔖 **Version:** ${{ env.LINUX_VERSION }} (android15-6.6-lts)
             - 🔰 **Variant:** ${{ github.event.inputs.variant }}
             - 🛡️ **SuSFS:** ${{ env.SUSFS_VERSION }}
             
