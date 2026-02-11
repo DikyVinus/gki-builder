@@ -30,13 +30,13 @@ if [ "$KVER" == "6.6" ]; then
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="android15-6.6-2025-01"
 elif [ "$KVER" == "6.1" ]; then
-  KERNEL_REPO="https://github.com/Kingfinik98/device_xiaomi_duchamp-kernel.git"
+  KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-6.1.git"
+  ANYKERNEL_BRANCH="master"
+  KERNEL_BRANCH="android14-6.1-staging"
+elif [ "$KVER" == "5.10" ]; then
+  KERNEL_REPO="https://github.com/Kingfinik98/android_kernel_xiaomi_sm7435.git"
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="lineage-23.0"
-elif [ "$KVER" == "5.10" ]; then
-  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10.git"
-  ANYKERNEL_BRANCH="master"
-  KERNEL_BRANCH="master"
 fi
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/gki-builder"
