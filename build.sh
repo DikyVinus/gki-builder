@@ -34,7 +34,7 @@ elif [ "$KVER" == "6.1" ]; then
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
-  KERNEL_REPO="https://github.com/Kingfinik98/kernel-android12-5.10.git"
+  KERNEL_REPO="https://github.com/linastorvaldz/kernel-android12-5.10.git"
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="master"
 fi
