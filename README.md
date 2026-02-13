@@ -19,8 +19,8 @@ Anykernel Here:
 
 Source All Manager 
 [https://github.com/Kingfinik98/ReSukiSU](https://github.com/Kingfinik98/ReSukiSU)
-## Credits
-
+## Credits : fork 
+[https://github.com/linastorvaldz](https://github.com/linastorvaldz)
 - Thanks to several kernel community developers for conceptual references and ideas.
 - All implementations in this repository were written and adapted specifically for this kernel build (not copied directly from any source).
 
