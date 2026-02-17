@@ -84,11 +84,30 @@ if [ "$KVER" == "5.10" ]; then
 fi
 # ----------------------------------------------------
 
-# --- PATCH 300HZ (INSTALLED AT THE BEGINNING) ---
-#log "Applying 300Hz patch..."
-#wget -qO Inject_300hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_300hz.sh
-#bash Inject_300hz.sh
-#rm Inject_300hz.sh
+# --- CHERRY-PICK KERNEL FEATURES (GKI 5.10, 6.1, 6.6) ---
+# Terletak sebelum setup KernelSU/SUSFS
+if [ "$KVER" == "5.10" ] || [ "$KVER" == "6.1" ] || [ "$KVER" == "6.6" ]; then
+  log "🍒 Cherry-picking kernel features from linastorvaldz..."
+  # Tambahkan remote sementara untuk mengambil commit
+  git remote add cherry-src https://github.com/linastorvaldz/kernel-android12-5.10
+  # Fetch depth yang cukup (sesuaikan jika commit terlalu lama)
+  git fetch cherry-src --depth=100
+  
+  # Lakukan cherry-pick untuk 3 commit yang diminta
+  # Jika terjadi konflik pada versi 6.1/6.6 (karena patch 5.10), build akan berhenti untuk pengecekan manual.
+  git cherry-pick 40a671d4 9178bf7 43138cd || error "Cherry-pick failed for GKI $KVER! Check for conflicts."
+  
+  # Hapus remote setelah selesai
+  git remote remove cherry-src
+  log "✅ Cherry-pick applied successfully for $KVER."
+fi
+# -------------------------------------------------------
+
+--- PATCH 300HZ (INSTALLED AT THE BEGINNING) ---
+log "Applying 300Hz patch..."
+wget -qO Inject_300hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_300hz.sh
+bash Inject_300hz.sh
+rm Inject_300hz.sh
 # --------------------------------------
 
 # --- ADD KSU INJECT SCRIPT ---
