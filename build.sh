@@ -10,7 +10,7 @@ elif [ "$KVER" == "6.1" ]; then
   RELEASE="v0.1"
 fi
 
-KERNEL_NAME="VorteX-Quick"
+KERNEL_NAME="VorteX-OSS"
 USER="Dev-BoltX"
 HOST="BoltX"
 TIMEZONE="Asia/Jakarta"
@@ -34,9 +34,9 @@ elif [ "$KVER" == "6.1" ]; then
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
-  KERNEL_REPO="https://github.com/zylhdrXP/android_kernel_xiaomi_sm7435.git"
+  KERNEL_REPO="https://github.com/Kingfinik98/android_kernel_xiaomi_sm7435.git"
   ANYKERNEL_BRANCH="master"
-  KERNEL_BRANCH="lineage-23.2-alt"
+  KERNEL_BRANCH="lineage-23.2"
 fi
 
 DEFCONFIG_TO_MERGE=""
