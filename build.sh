@@ -37,9 +37,6 @@ elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/zylhdrXP/android_kernel_xiaomi_sm7435.git"
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="lineage-23.2-alt"
-  # Tambahan untuk Module Repo (Khusus 5.10) - GANTI LINK
-  MODULE_REPO="https://github.com/zylhdrXP/android_kernel_xiaomi_sm7435-modules.git"
-  MODULE_BRANCH="16"
 fi
 
 DEFCONFIG_TO_MERGE=""
@@ -59,7 +56,6 @@ AK3_ZIP_NAME="$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
 OUTDIR="$WORKDIR/out"
 KSRC="$WORKDIR/ksrc"
 KERNEL_PATCHES="$WORKDIR/kernel-patches"
-MODULE_OUTDIR="$WORKDIR/out_modules" # Direktori output modul
 
 # Handle error
 exec > >(tee $WORKDIR/build.log) 2>&1
@@ -361,45 +357,6 @@ else
   $KMI_CHECK "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS" || true
 fi
 
-# --- BUILD EXTERNAL MODULES (Xiaomi SM7435) ---
-if [ -n "$MODULE_REPO" ]; then
-  log "Building external modules..."
-  MODULE_SRC="$WORKDIR/modules_src"
-  
-  # Clone modules
-  git clone -q --depth=1 $MODULE_REPO -b $MODULE_BRANCH $MODULE_SRC
-
-  # FIX: Loop melalui sub-folder di qcom/opensource karena tidak ada Makefile di root
-  QCOM_MODULES_PATH="$MODULE_SRC/qcom/opensource"
-  
-  if [ -d "$QCOM_MODULES_PATH" ]; then
-    log "Scanning modules in $QCOM_MODULES_PATH..."
-    for mod_dir in "$QCOM_MODULES_PATH"/*; do
-      if [ -d "$mod_dir" ]; then
-        # Cek apakah ada Makefile di dalam sub-folder tersebut
-        if [ -f "$mod_dir/Makefile" ]; then
-          log "Building module: $(basename "$mod_dir")..."
-          # Jalankan make untuk sub-folder tersebut
-          make -C $KSRC M="$mod_dir" modules ${MAKE_ARGS[@]}
-        else
-          log "Skipping $(basename "$mod_dir"): No Makefile found."
-        fi
-      fi
-    done
-  else
-    log "Warning: Path $QCOM_MODULES_PATH not found."
-  fi
-
-  # Siapkan direktori output modul
-  mkdir -p $MODULE_OUTDIR
-  
-  # Cari dan pindahkan semua file .ko hasil build
-  find $MODULE_SRC -name "*.ko" -exec cp {} $MODULE_OUTDIR/ \;
-  
-  log "Modules built successfully. Found: $(ls $MODULE_OUTDIR | wc -l) modules."
-fi
-# -----------------------------------------------
-
 # --- PATCH KPM SECTION ---
 log "Applying KPM Patch..."
 # Go to the kernel output directory Image
@@ -450,13 +407,6 @@ fi
 cd anykernel
 log "Zipping anykernel..."
 cp $KERNEL_IMAGE .
-
-# Sertakan modul ke dalam zip jika ada
-if [ -d "$MODULE_OUTDIR" ] && [ "$(ls -A $MODULE_OUTDIR 2>/dev/null)" ]; then
-  log "Adding modules to AnyKernel zip..."
-  mkdir -p modules
-  cp $MODULE_OUTDIR/* modules/
-fi
 
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
