@@ -71,7 +71,8 @@ log "Cloning kernel source from $(simplify_gh_url "$KERNEL_REPO")"
 git clone -q --depth=1 $KERNEL_REPO -b $KERNEL_BRANCH $KSRC
 
 cd $KSRC
-LINUX_VERSION=$(make kernelversion)
+# FIX: Ambil versi langsung dari Makefile untuk menghindari error "cc-wrapper"
+LINUX_VERSION=$(grep -E "^VERSION|^PATCHLEVEL|^SUBLEVEL" Makefile | tr -d 'A-Z =' | tr '\n' '.' | sed 's/\.$//')
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
 
