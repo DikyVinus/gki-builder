@@ -34,9 +34,9 @@ elif [ "$KVER" == "6.1" ]; then
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
-  KERNEL_REPO="https://github.com/zylhdrXP/android_kernel_xiaomi_sm7435.git"
+  KERNEL_REPO="https://github.com/garnet-random/android_kernel_xiaomi_sm7435.git"
   ANYKERNEL_BRANCH="master"
-  KERNEL_BRANCH="lineage-23.2"
+  KERNEL_BRANCH="lineage-23.0"
   # Tambahan untuk Module Repo (Khusus 5.10) - GANTI LINK
   MODULE_REPO="https://github.com/garnet-random/android_kernel_xiaomi_sm7435-modules.git"
   MODULE_BRANCH="lineage-23.0"
