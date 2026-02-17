@@ -34,13 +34,11 @@ elif [ "$KVER" == "6.1" ]; then
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="android14-6.1-staging"
 elif [ "$KVER" == "5.10" ]; then
-  KERNEL_REPO="https://github.com/Kingfinik98/android_kernel_xiaomi_sm7435.git"
+  KERNEL_REPO="https://github.com/ramabondanp/android_kernel_common-5.10.git"
   ANYKERNEL_BRANCH="master"
-  KERNEL_BRANCH="lineage-23.2-alt"
-  # AKTIFKAN CONFIG VENDOR GARNET UNTUK SUPPORT AOSP
-  DEFCONFIG_TO_MERGE="arch/arm64/configs/vendor/garnet_GKI.config"
+  KERNEL_BRANCH="android12-5.10-staging"
 fi
-
+DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/gki-builder"
 #Change the clang by removing the (#) sign then apply
 #CLANG_URL="https://github.com/linastorvaldz/idk/releases/download/clang-r547379/clang.tgz"
@@ -73,10 +71,25 @@ log "Cloning kernel source from $(simplify_gh_url "$KERNEL_REPO")"
 git clone -q --depth=1 $KERNEL_REPO -b $KERNEL_BRANCH $KSRC
 
 cd $KSRC
-# FIX: Ambil versi langsung dari Makefile untuk menghindari error "cc-wrapper"
-LINUX_VERSION=$(grep -E "^VERSION|^PATCHLEVEL|^SUBLEVEL" Makefile | tr -d 'A-Z =' | tr '\n' '.' | sed 's/\.$//')
+LINUX_VERSION=$(make kernelversion)
 LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
+
+# --- PATCH INFINIX GT 20 PRO CAM (GKI 5.10 ONLY) ---
+if [ "$KVER" == "5.10" ]; then
+  log "📸 Applying Infinix GT 20 Pro Camera Fix..."
+  curl -L "https://github.com/ramabondanp/android_kernel_common-5.10/commit/4fe04b60009e.patch" -o infinix_cam.patch
+  patch -p1 < infinix_cam.patch || log "Camera patch already embedded."
+  rm infinix_cam.patch
+fi
+# ----------------------------------------------------
+
+# --- PATCH 300HZ (INSTALLED AT THE BEGINNING) ---
+#log "Applying 300Hz patch..."
+#wget -qO Inject_300hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_300hz.sh
+#bash Inject_300hz.sh
+#rm Inject_300hz.sh
+# --------------------------------------
 
 # --- ADD KSU INJECT SCRIPT ---
 log "Injecting custom KSU & SuSFS configs from GitHub..."
@@ -170,14 +183,19 @@ if ksu_included; then
   cd $OLDPWD
     # Fix SUSFS Uname Symbol Error for KernelSU Next & All_Manager
     log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
+    # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
+    # This fixes the linker error caused by missing functions in the current SUSFS patch
     sed -i 's/#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME/#if 0 \/\* CONFIG_KSU_SUSFS_SPOOF_UNAME Disabled to fix build \*\//' drivers/kernelsu/supercalls.c
     log "SUSFS symbol fix applied for KernelSU-Next."
 
 # --- ReSukiSU Setup Block (Separated Logic) ---
 elif [ "$KSU" == "resukisu" ]; then
   log "Setting up ReSukiSU for KVER $KVER..."
+  
+  # Run the ReSukiSU setup script (using branch main)
   log "Running ReSukiSU setup from main branch..."
   curl -LSs "https://raw.githubusercontent.com/Kingfinik98/ReSukiSU/refs/heads/main/kernel/setup.sh" | bash -s main
+  # PATCH SUSFS for GKI 5.10
   if [ "$KVER" == "5.10" ]; then
     log "Applying SUSFS patches for GKI 5.10 (ReSukiSU Method)..."
     SUSFS_BRANCH="gki-android12-5.10"
@@ -188,12 +206,15 @@ elif [ "$KSU" == "resukisu" ]; then
     cp -r $susfs/include .
     cp -r $susfs/50_add_susfs_in_${SUSFS_BRANCH}.patch .
     patch -p1 < 50_add_susfs_in_${SUSFS_BRANCH}.patch || true
+    # Get SUSFS version for build info
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
     config --enable CONFIG_KPM
     config --enable CONFIG_KSU_MULTI_MANAGER_SUPPORT
     config --enable CONFIG_KSU_SUSFS
     log "[✓] ReSukiSU & SUSFS patched for $KVER."
   else
+    # Untuk 6.1 dan 6.6,hanya enable config-nya.
+    # The physical patching is done in the 'Standard SUSFS Logic' block below.
     config --enable CONFIG_KSU_SUSFS
     log "SUSFS config enabled for $KVER. Applying patches in Standard block..."
   fi
@@ -201,7 +222,10 @@ fi
 
 # SUSFS (Standard Logic for KernelSU yes & ReSukiSU 6.1/6.6)
 if susfs_included; then
+  # Check: Run the Standard patch if it is NOT ReSukiSU (Standard KernelSU)
+# OR if it is ReSukiSU but its version is 6.1 or 6.6.
   if [ "$KSU" != "resukisu" ] || ([ "$KSU" == "resukisu" ] && ([ "$KVER" == "6.1" ] || [ "$KVER" == "6.6" ])); then
+    # Kernel-side
     log "Applying kernel-side susfs patches (Standard Method)"
     SUSFS_DIR="$WORKDIR/susfs"
     SUSFS_PATCHES="${SUSFS_DIR}/kernel_patches"
@@ -222,6 +246,7 @@ if susfs_included; then
     elif [ $(echo "$LINUX_VERSION_CODE" | head -c4) -eq 6658 ]; then
       patch -p1 < $KERNEL_PATCHES/susfs/task_mmu.c_fix-k6.6.58.patch
     elif [ $(echo "$LINUX_VERSION_CODE" | head -c2) -eq 61 ]; then
+      # Ini patch yang memperbaiki GKI 6.1
       patch -p1 < $KERNEL_PATCHES/susfs/fs_proc_base.c-fix-k6.1.patch
     elif [ $(echo "$LINUX_VERSION_CODE" | head -c3) -eq 510 ]; then
       patch -p1 < $KERNEL_PATCHES/susfs/pershoot-susfs-k5.10.patch
@@ -232,6 +257,7 @@ if susfs_included; then
     SUSFS_VERSION=$(grep -E '^#define SUSFS_VERSION' ./include/linux/susfs.h | cut -d' ' -f3 | sed 's/"//g')
     config --enable CONFIG_KSU_SUSFS
   else
+    #  ReSukiSU 5.10, SUSFS is enabled in the top block
     log "Skipping standard SUSFS patch (Handled by ReSukiSU or logic elsewhere)."
   fi
 else
@@ -331,6 +357,7 @@ fi
 
 # --- PATCH KPM SECTION ---
 log "Applying KPM Patch..."
+# Go to the kernel output directory Image
 cd $OUTDIR/arch/arm64/boot
 if [ -f Image ]; then
   echo "✅ Image found, applying KPM patch..."
@@ -347,7 +374,9 @@ if [ -f Image ]; then
 else
   log "Warning: Image file not found in $PWD. Skipping KPM patch."
 fi
+# Return to the initial working directory (Post-compiling steps))
 cd $WORKDIR
+# ----------------------------------------------------
 
 ## Post-compiling stuff
 cd $WORKDIR
@@ -376,7 +405,6 @@ fi
 cd anykernel
 log "Zipping anykernel..."
 cp $KERNEL_IMAGE .
-
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
