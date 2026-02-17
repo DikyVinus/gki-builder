@@ -37,7 +37,11 @@ elif [ "$KVER" == "5.10" ]; then
   KERNEL_REPO="https://github.com/zylhdrXP/android_kernel_xiaomi_sm7435.git"
   ANYKERNEL_BRANCH="master"
   KERNEL_BRANCH="lineage-23.2"
+  # Tambahan untuk Module Repo (Khusus 5.10)
+  MODULE_REPO="https://github.com/zylhdrXP/android_kernel_xiaomi_sm7435-modules.git"
+  MODULE_BRANCH="lineage-23.0"
 fi
+
 DEFCONFIG_TO_MERGE=""
 GKI_RELEASES_REPO="https://github.com/Kingfinik98/gki-builder"
 #Change the clang by removing the (#) sign then apply
@@ -55,6 +59,7 @@ AK3_ZIP_NAME="$KERNEL_NAME-REL-KVER-VARIANT-BUILD_DATE.zip"
 OUTDIR="$WORKDIR/out"
 KSRC="$WORKDIR/ksrc"
 KERNEL_PATCHES="$WORKDIR/kernel-patches"
+MODULE_OUTDIR="$WORKDIR/out_modules" # Direktori output modul
 
 # Handle error
 exec > >(tee $WORKDIR/build.log) 2>&1
@@ -356,6 +361,29 @@ else
   $KMI_CHECK "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS" || true
 fi
 
+# --- BUILD EXTERNAL MODULES (Xiaomi SM7435) ---
+if [ -n "$MODULE_REPO" ]; then
+  log "Building external modules..."
+  MODULE_SRC="$WORKDIR/modules_src"
+  
+  # Clone modules
+  git clone -q --depth=1 $MODULE_REPO -b $MODULE_BRANCH $MODULE_SRC
+  
+  # Build modules using the compiled kernel
+  # Menggunakan make standar untuk modul eksternal
+  make -C $KSRC M=$MODULE_SRC modules ${MAKE_ARGS[@]}
+  
+  # Siapkan direktori output modul
+  mkdir -p $MODULE_OUTDIR
+  
+  # Cari dan pindahkan semua file .ko
+  # Menghindari modul built-in, hanya mengambil .ko
+  find $MODULE_SRC -name "*.ko" -exec cp {} $MODULE_OUTDIR/ \;
+  
+  log "Modules built successfully. Found: $(ls $MODULE_OUTDIR | wc -l) modules."
+fi
+# -----------------------------------------------
+
 # --- PATCH KPM SECTION ---
 log "Applying KPM Patch..."
 # Go to the kernel output directory Image
@@ -406,6 +434,14 @@ fi
 cd anykernel
 log "Zipping anykernel..."
 cp $KERNEL_IMAGE .
+
+# Sertakan modul ke dalam zip jika ada
+if [ -d "$MODULE_OUTDIR" ] && [ "$(ls -A $MODULE_OUTDIR 2>/dev/null)" ]; then
+  log "Adding modules to AnyKernel zip..."
+  mkdir -p modules
+  cp $MODULE_OUTDIR/* modules/
+fi
+
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
