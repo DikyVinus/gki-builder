@@ -46,8 +46,8 @@ GKI_RELEASES_REPO="https://github.com/Kingfinik98/gki-builder"
 #CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main-kernel-2025/clang-r536225.tar.gz"
 #CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/62cdcefa89e31af2d72c366e8b5ef8db84caea62/clang-r547379.tar.gz"
 #CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/105aba85d97a53d364585ca755752dae054b49e8/clang-r584948b.tar.gz"
-CLANG_URL="https://github.com/greenforce-project/greenforce_clang/releases/download/20260210/gf-clang-23.0.0-20260210.tar.gz"
-#CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/42d2c090c14c9c7f4dfd365ae551e2b959dc775c/clang-r584948.tar.gz"
+#CLANG_URL="https://github.com/greenforce-project/greenforce_clang/releases/download/20260210/gf-clang-23.0.0-20260210.tar.gz"
+CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/42d2c090c14c9c7f4dfd365ae551e2b959dc775c/clang-r584948b.tar.gz"
 #CLANG_URL="https://github.com/linastorvaldz/gki-builder/releases/download/clang-r487747c/clang-r487747c.tar.gz"
 #CLANG_URL="$(./clang.sh slim)"
 CLANG_BRANCH=""
@@ -84,30 +84,11 @@ if [ "$KVER" == "5.10" ]; then
 fi
 # ----------------------------------------------------
 
-# --- CHERRY-PICK KERNEL FEATURES (GKI 5.10, 6.1, 6.6) ---
-# Terletak sebelum setup KernelSU/SUSFS
-if [ "$KVER" == "5.10" ] || [ "$KVER" == "6.1" ] || [ "$KVER" == "6.6" ]; then
-  log "🍒 Cherry-picking kernel features from linastorvaldz..."
-  # Tambahkan remote sementara untuk mengambil commit
-  git remote add cherry-src https://github.com/linastorvaldz/kernel-android12-5.10
-  # Fetch depth yang cukup (sesuaikan jika commit terlalu lama)
-  git fetch cherry-src --depth=100
-  
-  # Lakukan cherry-pick untuk 3 commit yang diminta
-  # Jika terjadi konflik pada versi 6.1/6.6 (karena patch 5.10), build akan berhenti untuk pengecekan manual.
-  git cherry-pick 40a671d4 9178bf7 43138cd || error "Cherry-pick failed for GKI $KVER! Check for conflicts."
-  
-  # Hapus remote setelah selesai
-  git remote remove cherry-src
-  log "✅ Cherry-pick applied successfully for $KVER."
-fi
-# -------------------------------------------------------
-
---- PATCH 300HZ (INSTALLED AT THE BEGINNING) ---
-log "Applying 300Hz patch..."
-wget -qO Inject_300hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_300hz.sh
-bash Inject_300hz.sh
-rm Inject_300hz.sh
+# --- PATCH 300HZ (INSTALLED AT THE BEGINNING) ---
+#log "Applying 300Hz patch..."
+#wget -qO Inject_300hz.sh https://raw.githubusercontent.com/Kingfinik98/gki-builder/refs/heads/6.x/inject_ksu/Inject_300hz.sh
+#bash Inject_300hz.sh
+#rm Inject_300hz.sh
 # --------------------------------------
 
 # --- ADD KSU INJECT SCRIPT ---
@@ -375,31 +356,26 @@ else
 fi
 
 # --- PATCH KPM SECTION ---
-# PERBAIKAN: Patch KPM hanya dijalankan untuk build ReSukiSU
-if [ "$KSU" == "resukisu" ]; then
-  log "Applying KPM Patch for ReSukiSU..."
-  # Go to the kernel output directory Image
-  cd $OUTDIR/arch/arm64/boot
-  if [ -f Image ]; then
-    echo "✅ Image found, applying KPM patch..."
-    curl -LSs "https://github.com/Kingfinik98/SukiSU_patch/raw/refs/heads/main/kpm/patch_linux" -o patch
-    chmod 777 patch
-    ./patch
-    if [ -f oImage ]; then
-      mv -f oImage Image
-      ls -lh Image
-      log "✅ KPM Patch applied successfully."
-    else
-      log "Error: oImage not found!"
-    fi
+log "Applying KPM Patch..."
+# Go to the kernel output directory Image
+cd $OUTDIR/arch/arm64/boot
+if [ -f Image ]; then
+  echo "✅ Image found, applying KPM patch..."
+  curl -LSs "https://github.com/Kingfinik98/SukiSU_patch/raw/refs/heads/main/kpm/patch_linux" -o patch
+  chmod 777 patch
+  ./patch
+  if [ -f oImage ]; then
+    mv -f oImage Image
+    ls -lh Image
+    log "✅ KPM Patch applied successfully."
   else
-    log "Warning: Image file not found in $PWD. Skipping KPM patch."
+    log "Error: oImage not found!"
   fi
-  # Return to the initial working directory (Post-compiling steps))
-  cd $WORKDIR
 else
-  log "Skipping KPM Patch (Build type: $KSU)."
+  log "Warning: Image file not found in $PWD. Skipping KPM patch."
 fi
+# Return to the initial working directory (Post-compiling steps))
+cd $WORKDIR
 # ----------------------------------------------------
 
 ## Post-compiling stuff
