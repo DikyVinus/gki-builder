@@ -368,16 +368,32 @@ if [ -n "$MODULE_REPO" ]; then
   
   # Clone modules
   git clone -q --depth=1 $MODULE_REPO -b $MODULE_BRANCH $MODULE_SRC
+
+  # FIX: Loop melalui sub-folder di qcom/opensource karena tidak ada Makefile di root
+  QCOM_MODULES_PATH="$MODULE_SRC/qcom/opensource"
   
-  # Build modules using the compiled kernel
-  # Menggunakan make standar untuk modul eksternal
-  make -C $KSRC M=$MODULE_SRC modules ${MAKE_ARGS[@]}
-  
+  if [ -d "$QCOM_MODULES_PATH" ]; then
+    log "Scanning modules in $QCOM_MODULES_PATH..."
+    for mod_dir in "$QCOM_MODULES_PATH"/*; do
+      if [ -d "$mod_dir" ]; then
+        # Cek apakah ada Makefile di dalam sub-folder tersebut
+        if [ -f "$mod_dir/Makefile" ]; then
+          log "Building module: $(basename "$mod_dir")..."
+          # Jalankan make untuk sub-folder tersebut
+          make -C $KSRC M="$mod_dir" modules ${MAKE_ARGS[@]}
+        else
+          log "Skipping $(basename "$mod_dir"): No Makefile found."
+        fi
+      fi
+    done
+  else
+    log "Warning: Path $QCOM_MODULES_PATH not found."
+  fi
+
   # Siapkan direktori output modul
   mkdir -p $MODULE_OUTDIR
   
-  # Cari dan pindahkan semua file .ko
-  # Menghindari modul built-in, hanya mengambil .ko
+  # Cari dan pindahkan semua file .ko hasil build
   find $MODULE_SRC -name "*.ko" -exec cp {} $MODULE_OUTDIR/ \;
   
   log "Modules built successfully. Found: $(ls $MODULE_OUTDIR | wc -l) modules."
