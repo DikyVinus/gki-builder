@@ -76,12 +76,12 @@ LINUX_VERSION_CODE=${LINUX_VERSION//./}
 DEFCONFIG_FILE=$(find ./arch/arm64/configs -name "$KERNEL_DEFCONFIG")
 
 # --- PATCH INFINIX GT 20 PRO CAM (GKI 5.10 ONLY) ---
-if [ "$KVER" == "5.10" ]; then
-  log "📸 Applying Infinix GT 20 Pro Camera Fix..."
-  curl -L "https://github.com/ramabondanp/android_kernel_common-5.10/commit/4fe04b60009e.patch" -o infinix_cam.patch
-  patch -p1 < infinix_cam.patch || log "Camera patch already embedded."
-  rm infinix_cam.patch
-fi
+#if [ "$KVER" == "5.10" ]; then
+ # log "📸 Applying Infinix GT 20 Pro Camera Fix..."
+  #curl -L "https://github.com/ramabondanp/android_kernel_common-5.10/commit/4fe04b60009e.patch" -o infinix_cam.patch
+  #patch -p1 < infinix_cam.patch || log "Camera patch already embedded."
+ # rm infinix_cam.patch
+#fi
 # ----------------------------------------------------
 
 # --- PATCH 300HZ (INSTALLED AT THE BEGINNING) ---
