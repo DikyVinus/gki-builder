@@ -101,12 +101,7 @@ jobs:
 
           ret=0
           # Check Secrets
-          if [[ -z "$TG_CHAT_ID" ]]; then
-            _error "Missing TG_CHAT_ID secret (Telegram Chat ID)"
-          fi
-          if [[ -z "$TG_BOT_TOKEN" ]]; then
-            _error "Missing TG_BOT_TOKEN secret (Telegram Bot Token)"
-          fi
+          
           if [[ -z "$GH_TOKEN" ]]; then
             _error "Missing GH_TOKEN secret (GitHub PAT)"
           fi
