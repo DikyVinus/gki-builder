@@ -157,16 +157,20 @@ jobs:
           chmod +x *.sh py/*.py
           ./build.sh
 
-      - name: Upload Artifacts (ZIP & IMG)
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.BASE_NAME }}-${{ github.run_number }}
-          path: |
-            artifacts/*.zip
-            artifacts/*.img
-
-      - name: Upload Artifacts (Info File)
+- name: Upload Artifacts (Info File)
         uses: actions/upload-artifact@v4
         with:
           name: info-${{ github.run_number }}
           path: artifacts/*.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.BASE_NAME }}-${{ github.run_number }}
+          name: ${{ env.BASE_NAME }}-${{ github.run_number }}
+          prerelease: false
+          files: |
+            artifacts/*.zip
+            artifacts/*.img
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
