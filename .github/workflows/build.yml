@@ -89,8 +89,6 @@ jobs:
 
       - name: Validate Inputs and Secrets
         env:
-          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }} # telegram chat id
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }} # telegram bot token
           GH_TOKEN: ${{ secrets.GH_TOKEN }} # github token
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
