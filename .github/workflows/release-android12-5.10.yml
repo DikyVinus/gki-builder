@@ -116,6 +116,7 @@ jobs:
 
       - name: Send notification to TG
         run: |
+        if: false
             MESSAGE="📦 Release completed! [Click](https://github.com/${{ env.RELEASE_REPO }}/releases/tag/${{ env.RELEASE_TAG }})"
             source functions.sh
             send_msg "$MESSAGE"
