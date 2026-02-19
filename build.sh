@@ -408,26 +408,18 @@ cp $KERNEL_IMAGE .
 zip -r9 $WORKDIR/$AK3_ZIP_NAME ./*
 cd $OLDPWD
 
-if [ $STATUS != "BETA" ]; then
-  echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> $GITHUB_ENV
-  mkdir -p $WORKDIR/artifacts
-  mv $WORKDIR/*.zip $WORKDIR/artifacts
-fi
+echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> "$GITHUB_ENV"
+mkdir -p "$WORKDIR/artifacts"
+mv "$WORKDIR/$AK3_ZIP_NAME" "$WORKDIR/artifacts/"
 
-if [ $LAST_BUILD == "true" ] && [ $STATUS != "BETA" ]; then
+# Generate info file only when LAST_BUILD=true
+if [ "$LAST_BUILD" = "true" ]; then
   (
     echo "LINUX_VERSION=$LINUX_VERSION"
-    echo "SUSFS_VERSION=$(curl -s https://gitlab.com/simonpunk/susfs4ksu/raw/gki-android15-6.6/kernel_patches/include/linux/susfs.h | grep -E '^#define SUSFS_VERSION' | cut -d' ' -f3 | sed 's/"//g')"
+    echo "SUSFS_VERSION=none"
     echo "KERNEL_NAME=$KERNEL_NAME"
     echo "RELEASE_REPO=$(simplify_gh_url "$GKI_RELEASES_REPO")"
-  ) >> $WORKDIR/artifacts/info.txt
-fi
-
-if [ $STATUS == "BETA" ]; then
-  upload_file "$WORKDIR/$AK3_ZIP_NAME" "$text"
-  upload_file "$WORKDIR/build.log"
-else
-  send_msg "✅ Build Succeeded for $VARIANT variant."
+  ) >> "$WORKDIR/artifacts/info.txt"
 fi
 
 exit 0
