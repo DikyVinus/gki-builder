@@ -1,1 +1,16 @@
 *.bakh
+__pycache__/
+*.pyc
+*.pyo
+build.log
+anykernel/
+ksrc/
+out/
+clang/
+gas/
+susfs/
+artifacts/
+*.zip
+*.tar.*
+*.tgz
+*.7z

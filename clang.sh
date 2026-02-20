@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 # slim llvm
 SLIM_REPO="https://www.kernel.org/pub/tools/llvm/files/"
 # rv clang
@@ -20,24 +22,27 @@ MANDISA_REPO="https://api.github.com/repos/Mandi-Sa/clang/releases/latest"
 DV_REPO="https://api.github.com/repos/xaverodumpster/dv_clang/releases/latest"
 
 show_usage() {
-  CLANG_NAME="slim, rv, aosp, yuki, lilium, tnf, neutron, mandi-sa"
+  local clang_names="slim, rv, aosp, yuki, lilium, tnf, neutron, mandi-sa, dv"
   echo "Usage: $0 <clang name>"
-  echo "clang name: $CLANG_NAME"
+  echo "Available clang names: ${clang_names}"
 }
 
 # get_latest_clang <GH API URL> <GREP EXPR>
 # if no grep expr provided then will use .tar.gz as default
 get_latest_clang() {
   local url="$1"
-  local grp_expr="$2"
-  [ -z "$grp_expr" ] && grp_expr=".tar.gz"
-  curl -s "$url" | grep "browser_download_url" | grep "$grp_expr" | cut -d '"' -f 4
-  return $?
+  local grp_expr="${2:-.tar.gz}"
+  curl -fsSL "${url}" | grep "browser_download_url" | grep "${grp_expr}" | cut -d '"' -f 4
 }
+
+if [[ $# -lt 1 ]]; then
+  show_usage
+  exit 1
+fi
 
 case "$1" in
   "slim")
-    curl -s "$SLIM_REPO" | grep -oP 'llvm-[\d.]+-x86_64\.tar\.xz' | sort -V | tail -n1 | sed "s|^|$SLIM_REPO|"
+    curl -fsSL "$SLIM_REPO" | grep -oP 'llvm-[\d.]+-x86_64\.tar\.xz' | sort -V | tail -n1 | sed "s|^|$SLIM_REPO|"
     ;;
   "rv")
     get_latest_clang "$RV_REPO"
@@ -64,13 +69,9 @@ case "$1" in
     get_latest_clang "$DV_REPO" ".xz"
     ;;
   *)
-    if [ -z $1 ]; then
-      show_usage
-    else
-      echo "Invalid clang name '$1'"
-      echo
-      show_usage
-    fi
+    echo "Invalid clang name '$1'"
+    echo
+    show_usage
     exit 1
     ;;
 esac
