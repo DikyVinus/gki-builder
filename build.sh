@@ -356,24 +356,24 @@ else
 fi
 
 # --- PATCH KPM SECTION ---
-#log "Applying KPM Patch..."
+log "Applying KPM Patch..."
 # Go to the kernel output directory Image
-#cd $OUTDIR/arch/arm64/boot
-#if [ -f Image ]; then
-  #echo "✅ Image found, applying KPM patch..."
- # curl -LSs "https://github.com/Kingfinik98/SukiSU_patch/raw/refs/heads/main/kpm/patch_linux" -o patch
- # chmod 777 patch
- # ./patch
-#  if [ -f oImage ]; then
-    #mv -f oImage Image
- #   ls -lh Image
- #   log "✅ KPM Patch applied successfully."
- # else
-   # log "Error: oImage not found!"
- # fi
-#else
-#  log "Warning: Image file not found in $PWD. Skipping KPM patch."
-#fi
+cd $OUTDIR/arch/arm64/boot
+if [ -f Image ]; then
+  echo "✅ Image found, applying KPM patch..."
+  curl -LSs "https://github.com/Kingfinik98/SukiSU_patch/raw/refs/heads/main/kpm/patch_linux" -o patch
+  chmod 777 patch
+  ./patch
+  if [ -f oImage ]; then
+    mv -f oImage Image
+    ls -lh Image
+    log "✅ KPM Patch applied successfully."
+  else
+    log "Error: oImage not found!"
+  fi
+else
+  log "Warning: Image file not found in $PWD. Skipping KPM patch."
+fi
 # Return to the initial working directory (Post-compiling steps))
 cd $WORKDIR
 # ----------------------------------------------------
