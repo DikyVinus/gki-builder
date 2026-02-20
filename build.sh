@@ -14,7 +14,7 @@ KERNEL_NAME="CoreShift"
 USER="DikyVinus"
 HOST="Core"
 TIMEZONE="Asia/Jakarta"
-ANYKERNEL_REPO="https://github.com/osm0sis/AnyKernel3"
+ANYKERNEL_REPO="https://github.com/DikyVinus/AnyKernel3"
 
 # Fixed Logic: 5.10 & 6.1 use gki_defconfig, others use quartix_defconfig
 if [ "$KVER" == "5.10" ]; then
