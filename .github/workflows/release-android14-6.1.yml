@@ -115,6 +115,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Send notification to TG
+      if: false
         run: |
             MESSAGE="📦 Release completed! [Click](https://github.com/${{ env.RELEASE_REPO }}/releases/tag/${{ env.RELEASE_TAG }})"
             source functions.sh
