@@ -10,28 +10,36 @@ upload_file() {
   local FILE="$1"
   local CAPTION="${2:-}"
 
-  if ! [ -f $FILE ]; then
+  if [[ ! -f "$FILE" ]]; then
     error "file $FILE doesn't exist"
   fi
 
   chmod 777 "$FILE"
 
-  curl -s -F "document=@${FILE}" \
-    -F "chat_id=${TG_CHAT_ID}" \
-    -F "caption=${CAPTION}" \
-    -F "parse_mode=markdown" \
-    -F "disable_web_page_preview=true" \
-    "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
+  if [[ -n "${TG_BOT_TOKEN:-}" && -n "${TG_CHAT_ID:-}" ]]; then
+    curl -s -F "document=@${FILE}" \
+      -F "chat_id=${TG_CHAT_ID}" \
+      -F "caption=${CAPTION}" \
+      -F "parse_mode=markdown" \
+      -F "disable_web_page_preview=true" \
+      "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendDocument"
+  else
+    log "Telegram tokens not set, skipping file upload: $FILE"
+  fi
 }
 
 # send_msg
 send_msg() {
   local MESSAGE="$1"
-  curl -s -X POST "https://api.telegram.org/bot$TG_BOT_TOKEN/sendMessage" \
-    -d "chat_id=$TG_CHAT_ID" \
-    -d "disable_web_page_preview=true" \
-    -d "parse_mode=markdown" \
-    -d "text=$MESSAGE"
+  if [[ -n "${TG_BOT_TOKEN:-}" && -n "${TG_CHAT_ID:-}" ]]; then
+    curl -s -X POST "https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage" \
+      -d "chat_id=${TG_CHAT_ID}" \
+      -d "disable_web_page_preview=true" \
+      -d "parse_mode=markdown" \
+      -d "text=${MESSAGE}"
+  else
+    log "Telegram tokens not set, skipping message: $MESSAGE"
+  fi
 }
 
 # KernelSU-related functions
@@ -40,12 +48,12 @@ install_ksu() {
   local REF="$2"
   local URL
 
-  if [ -z "$REPO" ] || [ -z "$REF" ]; then
+  if [[ -z "$REPO" || -z "$REF" ]]; then
     echo "Usage: install_ksu <user/repo> <ref>"
     exit 1
   fi
 
-  URL="https://raw.githubusercontent.com/$REPO/$REF/kernel/setup.sh"
+  URL="https://raw.githubusercontent.com/${REPO}/${REF}/kernel/setup.sh"
   log "Installing KernelSU from $REPO | $REF"
   curl -LSs "$URL" | bash -s "$REF"
 }
@@ -58,8 +66,7 @@ ksu_included() {
   # 1. "yes" (Standard KSU) -> Return True (Masuk blok Standard).
   # 2. "resukisu" -> Return False (Lewati Standard, masuk blok ReSukiSU).
   # 3. "no" (Vanilla) -> Return False (Tidak ada KSU).
-  [ "$KSU" == "yes" ]
-  return $?
+  [[ "${KSU:-}" == "yes" ]]
 }
 
 # susfs_included() function
@@ -68,8 +75,7 @@ susfs_included() {
   # Return True jika input KSU_SUSFS adalah "true"
   # Ini digunakan oleh build.sh untuk memutuskan apakah akan clone SUSFS (Standard/Manual Fix)
   # atau membiarkan ReSukiSU menangani patchingnya sendiri.
-  [ "$KSU_SUSFS" == "true" ]
-  return $?
+  [[ "${KSU_SUSFS:-}" == "true" ]]
 }
 
 # simplify_gh_url <github-repository-url>
@@ -80,24 +86,27 @@ simplify_gh_url() {
 
 # Kernel scripts function
 config() {
-  $KSRC/scripts/config --file $DEFCONFIG_FILE $@
+  "${KSRC}/scripts/config" --file "${DEFCONFIG_FILE}" "$@"
 }
 
 # Logging function
 log() {
-  echo -e "[LOG] $*"
+  echo -e "[$(date +'%Y-%m-%d %H:%M:%S')] [LOG] $*"
 }
 
 error() {
+  local message="$*"
   local err_txt
   err_txt=$(
     cat << EOF
 *Kernel CI*
-ERROR: $*
+ERROR: ${message}
 EOF
   )
-  echo -e "[ERROR] $*"
+  echo -e "[$(date +'%Y-%m-%d %H:%M:%S')] [ERROR] ${message}"
   send_msg "$err_txt"
-  upload_file "$WORKDIR/build.log"
+  if [[ -f "${WORKDIR:-}/build.log" ]]; then
+    upload_file "${WORKDIR}/build.log"
+  fi
   exit 1
 }
