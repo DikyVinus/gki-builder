@@ -139,7 +139,7 @@ jobs:
       - name: Upload Artifacts (ZIP & IMG)
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.BASE_NAME }}-${{ github.run_number }}
+          name: ${{ env.BASE_NAME }}-${{ inputs.KERNEL_VERSION }}-${{ inputs.KSU }}-${{ inputs.KSU_SUSFS }}-${{ github.run_number }}
           path: |
             artifacts/*.zip
             artifacts/*.img
@@ -147,7 +147,7 @@ jobs:
       - name: Upload Artifacts (Info File)
         uses: actions/upload-artifact@v4
         with:
-          name: info-${{ github.run_number }}
+          name: info-${{ inputs.KERNEL_VERSION }}-${{ inputs.KSU }}-${{ inputs.KSU_SUSFS }}-${{ github.run_number }}
           path: artifacts/*.txt
 
       - name: Create GitHub Release
