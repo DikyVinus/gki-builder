@@ -38,7 +38,7 @@ elif [[ "$KVER" == "5.10" ]]; then
 fi
 
 DEFCONFIG_TO_MERGE=""
-GKI_RELEASES_REPO="https://github.com/Kingfinik98/gki-builder"
+GKI_RELEASES_REPO="https://github.com/${GITHUB_REPOSITORY:-Kingfinik98/gki-builder}"
 
 CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/42d2c090c14c9c7f4dfd365ae551e2b959dc775c/clang-r584948b.tar.gz"
 CLANG_BRANCH=""
@@ -247,15 +247,13 @@ else
 fi
 
 # Info for build
-text=$(
-  cat << EOF
-🐧 *Linux Version*: $LINUX_VERSION
+SUSFS_STATUS="None"
+susfs_included && SUSFS_STATUS="$SUSFS_VERSION"
+text="🐧 *Linux Version*: $LINUX_VERSION
 📅 *Build Date*: $KBUILD_BUILD_TIMESTAMP
 📛 *KernelSU*: ${KSU}
-ඞ *SuSFS*: $(susfs_included && echo "$SUSFS_VERSION" || echo "None")
-🔰 *Compiler*: $COMPILER_STRING
-EOF
-)
+ඞ *SuSFS*: $SUSFS_STATUS
+🔰 *Compiler*: $COMPILER_STRING"
 
 ## Build GKI
 log "Generating config..."
@@ -321,7 +319,7 @@ cp "$KERNEL_IMAGE" .
 zip -r9 "$WORKDIR/$AK3_ZIP_NAME" ./*
 cd "$OLDPWD"
 
-echo "BASE_NAME=$KERNEL_NAME-$VARIANT" >> "$GITHUB_ENV"
+echo "BASE_NAME=$KERNEL_NAME-$KVER-$VARIANT" >> "$GITHUB_ENV"
 mkdir -p "$WORKDIR/artifacts"
 mv "$WORKDIR/$AK3_ZIP_NAME" "$WORKDIR/artifacts/"
 

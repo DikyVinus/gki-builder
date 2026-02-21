@@ -15,6 +15,9 @@ on:
         type: string
       STATUS:
         type: string
+      SKIP_RELEASE:
+        type: boolean
+        default: false
 
   workflow_dispatch:
     inputs:
@@ -148,6 +151,7 @@ jobs:
           path: artifacts/*.txt
 
       - name: Create GitHub Release
+        if: ${{ inputs.SKIP_RELEASE != true }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.BASE_NAME }}-${{ github.run_number }}
