@@ -108,18 +108,6 @@ jobs:
           sudo apt-get install -y gh bc bison flex libssl-dev libelf-dev dwarves cpio
           pip install lxml
 
-#     - name: Enable swap with high priority and swappiness
-#       run: |
-#         sudo swapoff -a
-#         sudo fallocate -l 12G /swapfile
-#         sudo chmod 600 /swapfile
-#         sudo mkswap /swapfile
-#         sudo swapon /swapfile --priority 100
-#         sudo sysctl vm.swappiness=100
-#         free -h
-#         echo
-#         swapon --show
-
       - name: Run Build Script
         env:
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
@@ -136,6 +124,7 @@ jobs:
           chmod +x *.sh py/*.py
           ./build.sh
 
+      # UNIQUE artifact names per matrix execution
       - name: Upload Artifacts (ZIP & IMG)
         uses: actions/upload-artifact@v4
         with:
