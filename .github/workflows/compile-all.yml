@@ -1,0 +1,66 @@
+name: Compile Everything - All Versions & Variants
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["5.10", "6.1", "6.6"]
+        variant: ["VNL", "KSU", "KSU SuSFS"]
+    name: Build ${{ matrix.version }} ${{ matrix.variant }}
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      KSU: ${{ matrix.variant == 'VNL' && 'no' || 'yes' }}
+      KSU_SUSFS: ${{ matrix.variant == 'KSU SuSFS' && 'true' || 'false' }}
+      LAST_BUILD: "true"
+      TODO: "kernel"
+      KERNEL_VERSION: ${{ matrix.version }}
+      STATUS: "Stable"
+      SKIP_RELEASE: true
+
+  release:
+    name: Create Unified Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all_artifacts
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: All-Versions-${{ github.run_number }}
+          name: All Versions Build #${{ github.run_number }}
+          prerelease: false
+          files: all_artifacts/**/*
+          body: |
+            ## 🚀 Unified Build Release
+
+            This release contains all kernel versions and variants compiled in a single run.
+
+            ### 🐧 Versions Included:
+            - **android12-5.10**
+            - **android14-6.1**
+            - **android15-6.6**
+
+            ### 🔰 Variants Included:
+            - **VNL**: Vanilla (No KernelSU)
+            - **KSU**: KernelSU Next
+            - **KSU SuSFS**: KernelSU Next with SuSFS support
+
+            ---
+            **Status:** ✅ Stable
+            **Build Number:** ${{ github.run_number }}
+            **Date:** ${{ steps.date.outputs.date }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}

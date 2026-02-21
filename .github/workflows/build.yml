@@ -9,14 +9,15 @@ on:
         type: string
       KSU_SUSFS:
         type: string
-      KSU_MANUAL_HOOK:
-        type: string
       LAST_BUILD:
         type: string
       KERNEL_VERSION:
         type: string
       STATUS:
         type: string
+      SKIP_RELEASE:
+        type: boolean
+        default: false
 
   workflow_dispatch:
     inputs:
@@ -35,17 +36,8 @@ on:
         options:
           - "no"
           - "yes"
-          - "resukisu"
       KSU_SUSFS:
         description: Include SUSFS?
-        default: "false"
-        type: choice
-        options:
-          - "true"
-          - "false"
-
-      KSU_MANUAL_HOOK:
-        description: Use KSU Manual Hooks?
         default: "false"
         type: choice
         options:
@@ -90,7 +82,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
-          KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
         run: |
           _error() {
               echo "❌ ERROR: $*"
@@ -105,12 +96,6 @@ jobs:
 
           if [[ $KSU == "no" && $KSU_SUSFS == "true" ]]; then
               _error "Cannot use SuSFS without KernelSU"
-          fi
-          if [[ $KSU == "no" && $KSU_MANUAL_HOOK == "true" ]]; then
-            _error "Cannot use KSU Manual Hooks without KernelSU!"
-          fi
-          if [[ $KSU == "resukisu" && $KSU_SUSFS != "true" ]]; then
-              _error "ReSukiSU build requires KSU_SUSFS to be true"
           fi
 
           if [[ $ret -gt 0 ]]; then
@@ -142,7 +127,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           KSU: ${{ inputs.KSU }}
           KSU_SUSFS: ${{ inputs.KSU_SUSFS }}
-          KSU_MANUAL_HOOK: ${{ inputs.KSU_MANUAL_HOOK }}
           LAST_BUILD: ${{ inputs.LAST_BUILD }}
           TODO: ${{ inputs.TODO }}
           STATUS: ${{ env.STATUS }}
@@ -167,6 +151,7 @@ jobs:
           path: artifacts/*.txt
 
       - name: Create GitHub Release
+        if: ${{ inputs.SKIP_RELEASE != true }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.BASE_NAME }}-${{ github.run_number }}

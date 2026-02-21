@@ -1,3 +1,6 @@
+# KernelSU Manual Hook Patch v1.5
+# This patch adds manual hooks for KernelSU to kernel source files.
+
 diff --git a/drivers/input/input.c b/drivers/input/input.c
 index 78be582b5766..c2045ade6ccc 100644
 --- a/drivers/input/input.c
@@ -12,26 +15,26 @@ index 78be582b5766..c2045ade6ccc 100644
 +#endif
 +
  void input_event(struct input_dev *dev,
- 		 unsigned int type, unsigned int code, int value)
+		 unsigned int type, unsigned int code, int value)
  {
- 	unsigned long flags;
- 
+	unsigned long flags;
+
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
 +	if (unlikely(ksu_input_hook))
 +		ksu_handle_input_handle_event(&type, &code, &value);
 +#endif
 +
- 	if (is_event_supported(type, dev->evbit, EV_MAX)) {
- 
- 		spin_lock_irqsave(&dev->event_lock, flags);
+	if (is_event_supported(type, dev->evbit, EV_MAX)) {
+
+		spin_lock_irqsave(&dev->event_lock, flags);
 diff --git a/fs/exec.c b/fs/exec.c
 index 78e15a17c3e5..78d076116855 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -2122,11 +2122,21 @@ void set_dumpable(struct mm_struct *mm, int value)
- 	set_mask_bits(&mm->flags, MMF_DUMPABLE_MASK, value);
+	set_mask_bits(&mm->flags, MMF_DUMPABLE_MASK, value);
  }
- 
+
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
 +__attribute__((hot))
 +extern int ksu_handle_execve_sucompat(int *fd, const char __user **filename_user,
@@ -40,34 +43,34 @@ index 78e15a17c3e5..78d076116855 100644
 +#endif
 +
  SYSCALL_DEFINE3(execve,
- 		const char __user *, filename,
- 		const char __user *const __user *, argv,
- 		const char __user *const __user *, envp)
+		const char __user *, filename,
+		const char __user *const __user *, argv,
+		const char __user *const __user *, envp)
  {
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
 +	ksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
 +#endif
- 	return do_execve(getname(filename), argv, envp);
+	return do_execve(getname(filename), argv, envp);
  }
- 
+
 @@ -2146,6 +2156,9 @@ COMPAT_SYSCALL_DEFINE3(execve, const char __user *, filename,
- 	const compat_uptr_t __user *, argv,
- 	const compat_uptr_t __user *, envp)
+	const compat_uptr_t __user *, argv,
+	const compat_uptr_t __user *, envp)
  {
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK) // 32-bit su and 32-on-64 support
 +	ksu_handle_execve_sucompat((int *)AT_FDCWD, &filename, NULL, NULL, NULL);
 +#endif
- 	return compat_do_execve(getname(filename), argv, envp);
+	return compat_do_execve(getname(filename), argv, envp);
  }
- 
+
 diff --git a/fs/open.c b/fs/open.c
 index f5a50cc9cd12..fd694b702278 100644
 --- a/fs/open.c
 +++ b/fs/open.c
 @@ -512,8 +512,17 @@ static long do_faccessat(int dfd, const char __user *filename, int mode, int fla
- 	return res;
+	return res;
  }
- 
+
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
 +__attribute__((hot))
 +extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user,
@@ -79,17 +82,17 @@ index f5a50cc9cd12..fd694b702278 100644
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
 +	ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
 +#endif
- 	return do_faccessat(dfd, filename, mode, 0);
+	return do_faccessat(dfd, filename, mode, 0);
  }
- 
+
 diff --git a/fs/read_write.c b/fs/read_write.c
 index 7a2ff6157eda..c7a5e8ec2988 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
 @@ -618,8 +618,18 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
- 	return ret;
+	return ret;
  }
- 
+
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
 +extern bool ksu_vfs_read_hook __read_mostly;
 +extern int ksu_handle_sys_read(unsigned int fd, char __user **buf_ptr,
@@ -102,17 +105,17 @@ index 7a2ff6157eda..c7a5e8ec2988 100644
 +	if (unlikely(ksu_vfs_read_hook))
 +		ksu_handle_sys_read(fd, &buf, &count);
 +#endif
- 	return ksys_read(fd, buf, count);
+	return ksys_read(fd, buf, count);
  }
- 
+
 diff --git a/fs/stat.c b/fs/stat.c
 index daf28da335cd..3fa40c6d7446 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -478,6 +478,12 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
- 	return cp_new_stat(&stat, statbuf);
+	return cp_new_stat(&stat, statbuf);
  }
- 
+
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
 +__attribute__((hot))
 +extern int ksu_handle_stat(int *dfd, const char __user **filename_user,
@@ -121,25 +124,24 @@ index daf28da335cd..3fa40c6d7446 100644
 +
  #if !defined(__ARCH_WANT_STAT64) || defined(__ARCH_WANT_SYS_NEWFSTATAT)
  SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
- 		struct stat __user *, statbuf, int, flag)
+		struct stat __user *, statbuf, int, flag)
 @@ -485,6 +491,9 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
- 	struct kstat stat;
- 	int error;
- 
+	struct kstat stat;
+	int error;
+
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK)
 +	ksu_handle_stat(&dfd, &filename, &flag);
 +#endif
- 	error = vfs_fstatat(dfd, filename, &stat, flag);
- 	if (error)
- 		return error;
-@@ -636,6 +645,9 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
- 	struct kstat stat;
- 	int error;
- 
+	error = vfs_fstatat(dfd, filename, &stat, flag);
+	if (error)
+		return error;
+@@ -636,7 +645,10 @@ SYSCALL_DEFINE4(fstatat64, int, dfd, const char __user *, filename,
+	struct kstat stat;
+	int error;
+
 +#if defined(CONFIG_KSU) && !defined(CONFIG_KSU_KPROBES_HOOK) // 32-bit su
 +	ksu_handle_stat(&dfd, &filename, &flag);
 +#endif
- 	error = vfs_fstatat(dfd, filename, &stat, flag);
- 	if (error)
- 		return error;
-
+	error = vfs_fstatat(dfd, filename, &stat, flag);
+	if (error)
+		return error;
