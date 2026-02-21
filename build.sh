@@ -152,6 +152,25 @@ if ksu_included; then
   install_ksu 'pershoot/KernelSU-Next' 'dev-susfs'
   config --enable CONFIG_KSU
 
+  # --- OPTIONAL KSU PATCHES (Uncomment to use) ---
+  # log "Applying optional KernelSU patches..."
+  # patch -p1 < "$KERNEL_PATCHES/ksu/hooks/reboot-hook.patch"
+  # if [[ "$KVER" == "5.10" ]]; then
+  #   patch -p1 < "$KERNEL_PATCHES/ksu/hooks/manual-hook-v1.5.patch"
+  # elif [[ "$KVER" == "6.1" ]] || [[ "$KVER" == "6.6" ]]; then
+  #   patch -p1 < "$KERNEL_PATCHES/ksu/hooks/manual-hook-v1.6.patch"
+  # fi
+  #
+  # # Apply manager support patch to KernelSU-Next driver
+  # cd drivers/kernelsu
+  # patch -p1 < "$KERNEL_PATCHES/ksu/managers/ksun-add-more-managers-support.patch"
+  # cd -
+  #
+  # # Note: Other manager patches are available in $KERNEL_PATCHES/ksu/managers/
+  # # - ksu-add-manager.patch (for standard KernelSU)
+  # # - rksu-add-mambosu-manager-support.patch (for RKSU)
+  # -----------------------------------------------
+
   # Fix SUSFS Uname Symbol Error for KernelSU Next
   log "Applying fix for undefined SUSFS symbols (KernelSU-Next)..."
   # Disable SUSFS Uname handling block in supercalls.c to use standard kernel spoofing
@@ -288,6 +307,29 @@ if [[ $(echo "$LINUX_VERSION_CODE" | head -c1) == "6" ]]; then
 else
   "$KMI_CHECK" "$KSRC/android/abi_gki_aarch64.xml" "$MODULE_SYMVERS" || true
 fi
+
+# --- OPTIONAL KPM PATCH (Uncomment to use) ---
+# WARNING: This downloads and executes a third-party binary. Use at your own risk.
+# log "Applying KPM Patch..."
+# # Go to the kernel output directory Image
+# cd "$OUTDIR/arch/arm64/boot"
+# if [[ -f Image ]]; then
+#   echo "Image found, applying KPM patch..."
+#   curl -LSs "https://github.com/Kingfinik98/SukiSU_patch/raw/refs/heads/main/kpm/patch_linux" -o kpm_patch
+#   chmod +x kpm_patch
+#   ./kpm_patch
+#   if [[ -f oImage ]]; then
+#     mv -f oImage Image
+#     log "KPM Patch applied successfully."
+#   else
+#     log "Error: oImage not found!"
+#   fi
+#   rm kpm_patch
+# else
+#   log "Warning: Image file not found in $PWD. Skipping KPM patch."
+# fi
+# cd "$WORKDIR"
+# ---------------------------------------------
 
 ## Post-compiling stuff
 cd "$WORKDIR"
