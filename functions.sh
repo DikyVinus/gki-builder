@@ -10,7 +10,7 @@ upload_file() {
   local FILE="$1"
   local CAPTION="${2:-}"
 
-  if ! [ -f $FILE ]; then
+  if [[ ! -f "$FILE" ]]; then
     error "file $FILE doesn't exist"
   fi
 
@@ -40,7 +40,7 @@ install_ksu() {
   local REF="$2"
   local URL
 
-  if [ -z "$REPO" ] || [ -z "$REF" ]; then
+  if [[ -z "$REPO" ]] || [[ -z "$REF" ]]; then
     echo "Usage: install_ksu <user/repo> <ref>"
     exit 1
   fi
@@ -53,23 +53,13 @@ install_ksu() {
 # ksu_included() function
 # Type: bool
 ksu_included() {
-  # LOGIC FIX:
-  # Cek variabel input $KSU secara langsung.
-  # 1. "yes" (Standard KSU) -> Return True (Masuk blok Standard).
-  # 2. "resukisu" -> Return False (Lewati Standard, masuk blok ReSukiSU).
-  # 3. "no" (Vanilla) -> Return False (Tidak ada KSU).
-  [ "$KSU" == "yes" ]
-  return $?
+  [[ "$KSU" == "yes" ]]
 }
 
 # susfs_included() function
 # Type: bool
 susfs_included() {
-  # Return True jika input KSU_SUSFS adalah "true"
-  # Ini digunakan oleh build.sh untuk memutuskan apakah akan clone SUSFS (Standard/Manual Fix)
-  # atau membiarkan ReSukiSU menangani patchingnya sendiri.
-  [ "$KSU_SUSFS" == "true" ]
-  return $?
+  [[ "$KSU_SUSFS" == "true" ]]
 }
 
 # simplify_gh_url <github-repository-url>
@@ -80,7 +70,7 @@ simplify_gh_url() {
 
 # Kernel scripts function
 config() {
-  $KSRC/scripts/config --file $DEFCONFIG_FILE $@
+  "$KSRC/scripts/config" --file "$DEFCONFIG_FILE" "$@"
 }
 
 # Logging function
