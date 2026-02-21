@@ -10,12 +10,15 @@ jobs:
       matrix:
         version: ["5.10", "6.1", "6.6"]
         variant: ["VNL", "KSU", "KSU SuSFS"]
+
     name: Build ${{ matrix.version }} ${{ matrix.variant }}
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
+      # map matrix variant -> internal flags
       KSU: ${{ matrix.variant == 'VNL' && 'no' || 'yes' }}
       KSU_SUSFS: ${{ matrix.variant == 'KSU SuSFS' && 'true' || 'false' }}
+
       LAST_BUILD: "true"
       TODO: "kernel"
       KERNEL_VERSION: ${{ matrix.version }}
@@ -26,11 +29,24 @@ jobs:
     name: Create Unified Release
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
           path: all_artifacts
+          merge-multiple: true
+
+      # prevent duplicate filenames like info.txt from colliding
+      - name: Normalize Artifact Names
+        run: |
+          i=0
+          find all_artifacts -type f | while read f; do
+            dir=$(dirname "$f")
+            base=$(basename "$f")
+            mv "$f" "$dir/${i}_$base"
+            i=$((i+1))
+          done
 
       - name: Get current date
         id: date
@@ -59,7 +75,7 @@ jobs:
             - **KSU SuSFS**: KernelSU Next with SuSFS support
 
             ---
-            **Status:** ✅ Stable
+            **Status:** Stable
             **Build Number:** ${{ github.run_number }}
             **Date:** ${{ steps.date.outputs.date }}
         env:
